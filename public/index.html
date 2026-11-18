@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>МАФИЯ · глаз бога</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Rubik:wght@500;700&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sage:#b7bdae;         /* фон-подложка */
+    --paper:#f2efe6;        /* панели-бумага */
+    --paper-2:#e9e5d8;      /* панель темнее */
+    --ink:#2c2c28;          /* тёмная рамка/текст */
+    --ink-soft:#5a5a52;
+    --line:#2c2c28;
+    /* фракции */
+    --mafia-bg:#f6d9d8; --mafia-br:#d98f8c; --mafia-tx:#b5352c;
+    --think-bg:#d9e6f1; --think-br:#a7c3dc; --think-tx:#2a6aa0;
+    --whisp-bg:#ece1f0; --whisp-br:#c3a9d0; --whisp-tx:#7a4a95;
+    --dead-bg:#f4e7a6; --dead-br:#d4bd4c; --dead-tx:#7a5c12;
+    --act-bg:#e6e2d6; --act-br:#bdb8a6; --act-tx:#6a4a2a;
+    --narr:#71818f;
+    --good:#2f8f4e;
+    /* шрифт шапки/кнопок — меняется здесь одной строкой. Варианты:
+       "Pixelify Sans",ui-monospace,monospace   (А — пиксельный, как было)
+       "Rubik",sans-serif                       (Б — мягкий, читаемый)
+       "JetBrains Mono",ui-monospace,monospace  (В — как текст ленты) */
+    --ui-font:"JetBrains Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:var(--sage);
+    font-family:ui-monospace,"DejaVu Sans Mono","Cascadia Mono",Consolas,"Liberation Mono",monospace;
+    color:var(--ink);
+    display:flex;justify-content:center;
+    padding:14px;
+    -webkit-font-smoothing:none;
+  }
+  .machine{
+    width:100%;max-width:680px;display:flex;flex-direction:column;gap:6px;
+    height:calc(100vh - 20px);
+    height:calc(100dvh - 20px);   /* на телефоне учитывает адресную строку браузера */
+  }
+  .pixel{font-family:var(--ui-font);}
+  .title.pixel{font-family:"Pixelify Sans",ui-monospace,monospace;}
+
+  /* панель-каркас с «толстой» пиксельной рамкой */
+  .panel{
+    background:var(--paper);
+    border:3px solid var(--line);
+    box-shadow:inset 0 0 0 2px var(--paper), 4px 4px 0 rgba(44,44,40,.18);
+  }
+
+  /* ── верхняя панель ─────────────────────────── */
+  .topbar{display:flex;align-items:stretch;gap:8px;padding:6px}
+  .title{
+    display:flex;align-items:center;padding:6px 14px;
+    background:var(--paper-2);border:2px solid var(--line);
+    font-size:26px;font-weight:700;letter-spacing:1px;
+  }
+  .chip{
+    display:flex;align-items:center;gap:7px;padding:6px 12px;
+    background:var(--paper-2);border:2px solid var(--line);
+    font-size:14px;font-weight:600;white-space:nowrap;
+  }
+  .chip.day{color:#a6791f;flex-direction:column;justify-content:center;gap:0;line-height:1.15;text-align:center}
+  .chip.day .day-role{display:none;color:#b5352c;font-size:15px;font-weight:700}
+  .chip.day.has-role .day-role{display:block}
+  .chip.day.has-role .day-num{font-size:11px;font-weight:600}
+  .chip.mode{color:#3d3d3d}
+  .chip.shop{margin-left:auto;cursor:pointer;user-select:none;font-size:16px;opacity:.85;transition:opacity .15s,transform .15s}
+  .chip.shop:hover{opacity:1;transform:translateY(-1px)}
+  .chip .eye{font-size:15px}
+  /* ── Глаз бога: выключатель секретов ─────────── */
+  .chip.mode{cursor:pointer;user-select:none;opacity:.55;transition:opacity .15s}
+  .chip.mode.on{opacity:1;color:#b5352c}
+  .chip.mode.on .eye{filter:drop-shadow(0 0 2px #b5352c88)}
+  .chip.mode.on{background:var(--mafia-bg);border-color:var(--mafia-tx)}
+  .chip.mode{position:relative}
+  .chip.mode.locked::after{content:"🔒";position:absolute;right:-6px;top:-8px;font-size:12px}
+  .chip.mode.fresh{animation:eyepulse 1.2s ease-in-out 3}
+  @keyframes eyepulse{0%,100%{box-shadow:0 0 0 0 #b5352c00}50%{box-shadow:0 0 0 5px #b5352c66;opacity:1}}
+  /* ── турнирная таблица ── */
+  .chip.lb{cursor:pointer;user-select:none;font-size:16px;opacity:.85;transition:opacity .15s}
+  .chip.lb:hover{opacity:1}
+  .lb-card{max-width:440px}
+  .lb-tabs{display:flex;gap:6px;margin-bottom:10px}
+  .lb-tabs button{flex:1;padding:7px 0;font-family:var(--ui-font);font-size:13px;font-weight:700;cursor:pointer;
+    background:var(--paper-2);border:2px solid var(--line);color:var(--ink-soft)}
+  .lb-tabs button.on{background:var(--mafia-tx);color:#fff}
+  .lb-row{display:grid;grid-template-columns:28px 30px 1fr 44px 38px 40px;gap:6px;align-items:center;
+    padding:5px 4px;font-size:13px;border-bottom:1px dashed #cfcabc}
+  .lb-row.head{font-size:10px;color:var(--ink-soft);border-bottom:2px solid var(--line);padding-bottom:4px}
+  .lb-row .r{font-weight:700;text-align:right}
+  .lb-row .a{width:30px;height:24px;background:#cfcabc;border:1px solid var(--line);overflow:hidden}
+  .lb-row .a img{width:100%;height:100%;object-fit:cover;image-rendering:pixelated;display:block}
+  .lb-row .n{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lb-row .p{font-weight:700;text-align:right;color:var(--mafia-tx)}
+  .lb-row .g,.lb-row .w{text-align:right;color:var(--ink-soft)}
+  .lb-row.me{background:#fff3c4;border:2px solid #d4bd4c;border-radius:2px}
+  .lb-gap{text-align:center;color:var(--ink-soft);padding:2px 0;font-size:12px}
+  .lb-empty{padding:16px 4px;text-align:center;color:var(--ink-soft);font-size:13px}
+  .lb-mine{margin:-2px 0 8px;padding:7px 10px;background:#fff3c4;border:2px solid #d4bd4c;font-size:13px;font-weight:700;color:#6b5410;text-align:center}
+  .lb-rules{margin-top:12px;font-size:11px;line-height:1.5;color:var(--ink-soft)}
+  .lb-list{max-height:min(60vh,520px);overflow-y:auto}
+  .score-line{background:#fff3c4;border:2px solid #d4bd4c;color:#6b5410;font-weight:700;text-align:center;
+    padding:9px 10px;font-size:14px;cursor:pointer}
+  .toast{position:fixed;left:12px;right:12px;margin:0 auto;width:fit-content;bottom:110px;z-index:200;max-width:420px;
+    background:var(--ink);color:var(--paper);border:2px solid var(--line);padding:10px 14px;font-size:14px;line-height:1.45;
+    box-shadow:4px 4px 0 rgba(44,44,40,.25);opacity:0;pointer-events:none;transition:opacity .2s}
+  .toast.on{opacity:1}
+  body.blind .plaque.secret,
+  body.blind div.act.secret{display:none}
+  body.blind .role.secret{visibility:hidden}
+  .seat.me .ava{box-shadow:0 0 0 2px #b5352c,0 0 0 4px #b5352c55}
+  .chip.door{cursor:pointer;user-select:none;font-size:16px;opacity:.7;transition:opacity .15s}
+  .chip.door:hover{opacity:1}
+  .chip.gear{cursor:pointer;user-select:none;font-size:16px;opacity:.7;transition:opacity .15s,transform .15s}
+  .chip.gear:hover{opacity:1;transform:rotate(35deg)}
+  .modal{position:fixed;inset:0;background:rgba(44,44,40,.55);display:flex;align-items:center;justify-content:center;z-index:100;padding:14px}
+  .modal-card{background:var(--paper);border:3px solid var(--line);box-shadow:4px 4px 0 rgba(44,44,40,.25);padding:18px;width:100%;max-width:340px}
+  .modal-head{display:flex;justify-content:space-between;align-items:center;font-size:18px;font-weight:700;margin-bottom:14px}
+  .modal-head .x{cursor:pointer;opacity:.6}
+  .modal-head .x:hover{opacity:1}
+  .modal-card label{display:block;font-size:12px;color:var(--ink-soft);margin:6px 0 4px}
+  .modal-card input{width:100%;padding:9px 10px;font-size:15px;font-family:inherit;color:var(--ink);background:#fbfaf5;border:2px solid var(--line);outline:none}
+  .modal-card input:focus{border-color:var(--mafia-tx)}
+  .modal-card .save{width:100%;margin-top:12px;padding:10px;cursor:pointer;font-weight:700;background:var(--mafia-tx);color:#fff;border:2px solid var(--line);box-shadow:3px 3px 0 rgba(44,44,40,.2)}
+  .modal-card .save:active{transform:translate(1px,1px)}
+  .setmsg{margin-top:10px;font-size:13px;min-height:1.1em}
+  .setmsg.err{color:var(--mafia-tx)}
+  .setmsg.ok{color:var(--good)}
+  .acct-top{margin:-4px 0 14px;padding:8px 10px;font-size:13px;line-height:1.5;text-align:center;background:var(--paper-2);border:2px solid var(--line)}
+  .acct-top.vip{background:#fff3c4;border-color:#d4bd4c;color:#6b5410}
+  .soon{margin-top:14px;padding-top:12px;border-top:1px dashed var(--ink-soft);font-size:12px;color:var(--ink-soft);line-height:1.8}
+  .ava-section{margin-top:12px}
+  .bio-section{margin-top:14px;padding-top:10px;border-top:1px dashed var(--ink-soft)}
+  .bio-row{display:flex;gap:6px}
+  .bio-row .bio-age{width:84px;flex:none}
+  .modal-card{max-height:calc(100vh - 28px);overflow-y:auto}
+  .ava-group-title{font-size:11px;color:var(--ink-soft);margin:8px 0 4px;letter-spacing:.5px}
+  .ava-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .ava-opt{aspect-ratio:5/4;border:2px solid var(--line);background:#cfcabc;cursor:pointer;overflow:hidden;padding:0}
+  .ava-opt img{width:100%;height:100%;object-fit:cover;image-rendering:pixelated;display:block}
+  .ava-opt:hover{border-color:var(--mafia-tx)}
+  .ava-opt.sel{border-color:var(--mafia-tx);box-shadow:0 0 0 2px var(--mafia-tx)}
+
+  /* ── ряд участников: сетка до 8 в ряд, дальше 2-й ряд (без скрола) ── */
+  .seatsWrap{padding:5px}
+  .seats{display:grid;grid-template-columns:repeat(8,1fr);gap:3px}
+  .seat{text-align:center;position:relative;min-width:0}
+  .ava{
+    width:100%;aspect-ratio:5/4;margin:0 auto;position:relative;overflow:hidden;
+    display:flex;align-items:center;justify-content:center;
+    font-size:26px;font-weight:700;color:#1c1c1c;
+    background:#cfcabc;border:1px solid var(--line);
+  }
+  .ava img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;image-rendering:pixelated}
+  .seat .nm{font-size:13px;line-height:1.1;margin-top:4px;font-weight:700;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .seat .role{font-size:11px;line-height:1.1;margin-top:1px;font-weight:700;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bar{height:5px;margin-top:3px;border:1px solid var(--line);background:#cfcabc}
+  .bar > i{display:block;height:100%;background:var(--good);width:100%}
+  .seat.dead{opacity:.5;filter:grayscale(.85)}
+  .seat.dead .bar > i{width:0}
+  .seat.dead .ava::after{
+    content:"✕";position:absolute;color:#b5352c;font-size:26px;font-weight:700;
+    left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;
+  }
+
+  /* ── строка-сводка сил ──────────────────────── */
+  .summary{
+    padding:6px 10px;font-size:13px;font-weight:600;
+    display:flex;flex-wrap:wrap;gap:3px 12px;align-items:center;
+    background:var(--paper-2);
+  }
+  .summary .sep{color:#9a968a}
+  .summary .ok{color:var(--good)}
+  .summary .bad{color:#b5352c}
+  .summary .no{color:#b5352c;text-decoration:line-through}
+
+  /* ── лента событий ──────────────────────────── */
+  .feedWrap{flex:1;min-height:0;padding:6px;display:flex}
+  .feed{
+    flex:1;overflow-y:auto;padding:2px 8px 2px 4px;
+    display:flex;flex-direction:column;gap:7px;
+  }
+  .ev{animation:pop .22s ease-out}
+  @keyframes pop{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){.ev{animation:none}}
+
+  .narr{text-align:center;color:var(--narr);font-size:13px;padding:2px 0}
+  .narr::before{content:"— "}.narr::after{content:" —"}
+
+  /* ночная/утренняя атмосфера рассказчика + точки «печатает…» */
+  .atmo{text-align:center;font-style:italic;color:var(--ink-soft);font-size:13px;line-height:1.45;padding:1px 14px}
+  .typing{display:flex;justify-content:center;gap:5px;padding:4px 0}
+  .typing i{width:6px;height:6px;border-radius:50%;background:var(--narr);opacity:.25;animation:tdot 1.1s infinite}
+  .typing i:nth-child(2){animation-delay:.18s}
+  .typing i:nth-child(3){animation-delay:.36s}
+  @keyframes tdot{0%,60%,100%{opacity:.25;transform:none}30%{opacity:1;transform:translateY(-3px)}}
+  @media (prefers-reduced-motion:reduce){.typing i{animation:none;opacity:.6}}
+
+  .plaque{border:2px solid var(--line);padding:9px 11px;font-size:14px;line-height:1.5}
+  .plaque .who{font-weight:700;margin-bottom:3px;display:flex;align-items:center;gap:7px}
+  .plaque .who .tag{
+    font-family:var(--ui-font);font-size:11px;font-weight:700;
+    padding:1px 6px;border:2px solid;border-radius:2px;
+  }
+  .say{background:var(--paper)}
+  .say .who .nm{font-weight:700}
+  /* свои реплики — подсвечены */
+  .say.mine{background:#fff6d6;border-color:#d4bd4c;box-shadow:inset 3px 0 0 #d4bd4c}
+  .you{font-weight:700;font-size:.85em;color:#8a6d12}
+  .vote.mine{background:#fff6d6}
+  .think{background:var(--think-bg);border-color:var(--think-br)}
+  .think .who{color:var(--think-tx)}
+  .think .who::after{content:"думает";font-weight:600;opacity:.7;font-size:12px}
+  .mafia{background:var(--mafia-bg);border-color:var(--mafia-br)}
+  .mafia .who{color:var(--mafia-tx)}
+  .mafia .who .tag{background:var(--mafia-bg);border-color:var(--mafia-tx);color:var(--mafia-tx)}
+  .whisper{background:var(--whisp-bg);border-color:var(--whisp-br)}
+  .whisper .who{color:var(--whisp-tx)}
+  .whisper .who .tag{background:var(--whisp-bg);border-color:var(--whisp-tx);color:var(--whisp-tx)}
+  .act{background:var(--act-bg);border-color:var(--act-br);color:var(--act-tx);font-size:13px;padding:6px 11px}
+  .death{background:var(--dead-bg);border-color:var(--dead-br);color:var(--dead-tx);font-weight:700;display:flex;gap:10px;align-items:center}
+  .death .skull{font-size:20px}
+  .vote{color:var(--ink-soft);font-size:13px;padding:2px 4px}
+  .vote b{color:var(--ink)}
+  .over{background:var(--ink);color:var(--paper);text-align:center;font-weight:700;padding:14px;font-size:16px}
+  .replay{display:block;width:100%;margin-top:8px;padding:12px;cursor:pointer;
+    background:var(--mafia-tx);color:#fff;border:2px solid var(--line);
+    font-weight:700;font-size:15px;text-align:center;letter-spacing:.5px;
+    box-shadow:3px 3px 0 rgba(44,44,40,.2)}
+  .replay:hover{filter:brightness(1.08)}
+  .replay:active{transform:translate(1px,1px);box-shadow:2px 2px 0 rgba(44,44,40,.2)}
+  .replay:disabled{opacity:.6;cursor:default}
+
+  /* ── VIP и дневной лимит ── */
+  .title{position:relative}
+  .sh-badge{position:absolute;right:-9px;bottom:-11px;display:flex;align-items:center;gap:1px;font-size:12px;line-height:1;cursor:pointer;
+    background:var(--paper);border:2px solid var(--line);border-radius:10px;padding:1px 4px 1px 2px;font-family:var(--ui-font)}
+  .sh-badge b{font-size:11px}
+  .sh-badge.zero{opacity:.55}
+  .vip-badge{position:absolute;right:-7px;top:-10px;font-size:15px;line-height:1;filter:drop-shadow(0 1px 0 rgba(44,44,40,.35))}
+  .acct-line{text-align:center;font-size:12px;color:var(--ink-soft);padding:2px 0}
+  .limitbox{background:var(--paper);border:2px solid var(--line);padding:14px 14px 12px;text-align:center;line-height:1.5;font-size:14px;
+    box-shadow:3px 3px 0 rgba(44,44,40,.15)}
+  .limitbox p{margin:0 0 8px}
+  .limitbox .vipsell{color:#7a5c12}
+  .limitbox .buyvip{display:block;width:100%;margin-top:6px;padding:11px;font-weight:700;font-size:15px;
+    background:var(--mafia-tx);color:#fff;border:2px solid var(--line);cursor:pointer;box-shadow:3px 3px 0 rgba(44,44,40,.2)}
+  .limitbox .buyvip:active{transform:translate(1px,1px)}
+  .vb-msg{font-size:12px;color:var(--ink-soft);margin-top:8px;min-height:1em}
+  /* настройки: почта, пароль, новости */
+  .acc-section{margin-top:12px;padding-top:12px;border-top:1px dashed var(--ink-soft)}
+  .acc-mail{font-size:13px;line-height:1.5;margin:2px 0 6px;word-break:break-all}
+  .acc-mail .okm{color:var(--good);font-weight:700}
+  .acc-mail .nom{color:var(--mafia-tx);font-weight:700}
+  .acc-row{display:flex;gap:6px}
+  .acc-row input{flex:1;min-width:0}
+  .modal-card .news-chk{display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.45;margin-top:14px;cursor:pointer;color:var(--ink)}
+  .modal-card .news-chk input{width:18px;height:18px;flex:none;margin:1px 0 0;padding:0;accent-color:var(--mafia-tx)}
+  /* плашка «к тебе пришла гостья» */
+  .held{background:#fde7ef;border-color:#d97a9b}
+  .held .who{color:#a0335c}
+  /* VIP: досрочное завершение — красный кружок в углу ленты, появляется, когда твой герой выбыл */
+  .feedWrap{position:relative}
+  .quitBtn{display:none;position:absolute;top:8px;right:18px;z-index:5;width:38px;height:38px;border-radius:50%;
+    background:#c8322a;border:2px solid var(--line);color:#fff;font-size:17px;line-height:1;cursor:pointer;
+    box-shadow:2px 2px 0 rgba(44,44,40,.3)}
+  .quitBtn.on{display:block}
+  .shieldBtn{display:none;position:absolute;top:8px;right:18px;z-index:5;width:40px;height:40px;border-radius:50%;
+    background:#2f6fb5;border:2px solid var(--line);color:#fff;font-size:18px;line-height:1;cursor:pointer;
+    box-shadow:2px 2px 0 rgba(44,44,40,.3);animation:shpulse 1.6s ease-in-out infinite}
+  .shieldBtn.on{display:block}
+  @keyframes shpulse{0%,100%{box-shadow:2px 2px 0 rgba(44,44,40,.3),0 0 0 0 #2f6fb500}50%{box-shadow:2px 2px 0 rgba(44,44,40,.3),0 0 0 5px #2f6fb555}}
+  @media (prefers-reduced-motion:reduce){.shieldBtn{animation:none}}
+  .qa-sh{background:#2f6fb5;color:#fff}
+  .shield-on{background:#e3eefa;border-color:#7aa5d6}
+  .shield-on .who{color:#2f6fb5}
+  .quitBtn:hover{filter:brightness(1.1)}
+  .quitAsk{display:none;position:absolute;top:52px;right:18px;z-index:6;width:230px;padding:10px;font-size:13px;line-height:1.45;
+    background:var(--paper);border:2px solid var(--line);box-shadow:3px 3px 0 rgba(44,44,40,.25)}
+  .quitAsk.on{display:block}
+  .qa-row{display:flex;gap:6px;margin-top:8px}
+  .qa-row button{flex:1;padding:7px 4px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;border:2px solid var(--line)}
+  .qa-yes{background:#c8322a;color:#fff}
+  .qa-no{background:var(--paper-2);color:var(--ink)}
+  /* памятка роли */
+  .memo{background:#fff8e1;border-color:#d4bd4c;font-size:13px;line-height:1.55}
+  .memo-hint{margin-top:6px;font-size:11px;color:var(--ink-soft)}
+  .chip.day.has-role{cursor:pointer}
+  /* ── экран перед партией ── */
+  .setupbox{background:var(--paper);border:2px solid var(--line);padding:12px 12px 14px;box-shadow:3px 3px 0 rgba(44,44,40,.15)}
+  .st-title{text-align:center;font-weight:700;font-size:16px;margin-bottom:8px}
+  .st-block{border-top:2px dashed #cfcabc;padding-top:10px;margin-top:10px}
+  .st-block:first-of-type{border-top:0;margin-top:0;padding-top:0}
+  .st-size{font-size:14px;margin-bottom:6px}
+  .st-size b{font-size:18px}
+  .st-chips{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0 10px}
+  .st-chip{font-size:12px;padding:3px 7px;border:2px solid var(--line);background:var(--paper-2);white-space:nowrap}
+  .st-chip.r-mafia,.st-chip.r-maniac{color:#b5352c;border-color:#d98f8c;background:var(--mafia-bg)}
+  .st-chip.new{animation:chipnew .9s ease-out;border-color:#a6791f;background:#fff3c4}
+  @keyframes chipnew{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.12)}100%{transform:none;opacity:1}}
+  .st-vip-title{font-weight:700;color:#7a5c12;margin-bottom:6px}
+  .st-vip-title .soon{font-weight:600;font-size:11px;color:var(--ink-soft);border:1px dashed var(--ink-soft);padding:0 5px;margin-left:4px}
+  .st-vip input[type=range]{width:100%;height:28px;accent-color:var(--mafia-tx);cursor:pointer;margin:0 0 2px}
+  .st-lbl{font-size:12px;color:var(--ink-soft);margin:2px 0 5px}
+  .st-pick{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px}
+  .st-role{font-family:inherit;font-size:12px;padding:5px 8px;border:2px solid var(--line);background:var(--paper-2);cursor:pointer}
+  .st-role.on{background:var(--mafia-tx);color:#fff}
+  .st-role:disabled{cursor:not-allowed}
+  .st-vip.locked{opacity:.55;filter:grayscale(.5)}
+  .st-vip.locked input[type=range]{cursor:not-allowed}
+  .st-vipline{margin-top:10px;font-size:12px;line-height:1.5;color:#7a5c12;text-align:center}
+  .st-buy{display:inline-block;margin-left:6px;font-family:inherit;font-size:11px;font-weight:700;padding:2px 8px;
+    background:var(--mafia-tx);color:#fff;border:1px solid var(--line);cursor:pointer}
+  .buy-link{color:var(--mafia-tx);font-weight:700;text-decoration:underline;cursor:pointer}
+  /* 🛒 Ларёк */
+  .shop-card{max-width:380px}
+  .shop-sec{margin:4px 0 14px}
+  .shop-sec h4{margin:0 0 4px;font-size:15px}
+  .shop-sec .sub{font-size:12px;color:var(--ink-soft);line-height:1.45;margin:0 0 8px}
+  .shop-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+  .shop-tile{font-family:inherit;color:var(--ink);background:#fbfaf5;border:2px solid var(--line);padding:9px 4px 8px;cursor:pointer;text-align:center;
+    box-shadow:3px 3px 0 rgba(44,44,40,.18);display:flex;flex-direction:column;gap:3px;align-items:center}
+  .shop-tile:hover{background:#fff6dc}
+  .shop-tile:active{transform:translate(1px,1px)}
+  .shop-tile:disabled{opacity:.55;cursor:wait}
+  .shop-tile b{font-size:14px}
+  .shop-tile .pr{font-size:15px;font-weight:700;color:var(--mafia-tx)}
+  .shop-tile .cap{font-size:10.5px;line-height:1.3;color:var(--ink-soft)}
+  .shop-sec.vip .shop-tile{border-color:#b8902f;box-shadow:inset 0 0 0 2px #f5e2b0,3px 3px 0 rgba(44,44,40,.18)}
+  .shop-foot{font-size:11.5px;line-height:1.5;color:var(--ink-soft);text-align:center;border-top:2px dashed var(--paper-2);padding-top:10px}
+  .shop-blog{margin-top:10px;padding:8px 10px;font-size:12.5px;line-height:1.45;text-align:center;background:#fff3c4;border:2px dashed #d4bd4c;color:#6b5410}
+  .shop-blog a{color:var(--mafia-tx);font-weight:700;white-space:nowrap}
+  .shop-msg{display:none;margin:0 0 10px;padding:8px 10px;font-size:13px;background:var(--mafia-bg);border:2px solid var(--mafia-br);color:var(--mafia-tx)}
+  .shop-msg.on{display:block}
+  .shop-doc{display:none}
+  .shop-doc.on{display:block}
+  .shop-doc iframe{width:100%;height:min(62vh,560px);border:2px solid var(--line);background:var(--paper)}
+  .shop-back{font-family:inherit;font-size:13px;font-weight:700;margin:0 0 8px;padding:5px 10px;cursor:pointer;background:var(--paper-2);border:2px solid var(--line)}
+  .toast.tap{pointer-events:auto;cursor:pointer}
+  .st-note{font-size:12px;color:#7a5c12;text-align:center;margin-top:6px;line-height:1.45}
+  .ava-lock{font-size:12px;color:#7a5c12;margin:2px 0 6px}
+  .ava-grid.locked .ava-opt{opacity:.45;cursor:not-allowed;filter:grayscale(.6)}
+  .ava-grid.locked .ava-opt:hover{border-color:var(--line)}
+
+  .conn{position:fixed;top:6px;right:10px;font-size:11px;color:#5a5a52;
+    background:var(--paper);border:2px solid var(--line);padding:2px 8px}
+  /* «● эфир» (связь есть) не показываем нигде — плашка видна, только пока подключаемся или связи нет */
+  .conn.live{display:none}
+  .conn.demo{color:#a6791f}
+
+
+  /* ── панель хода игрока (появляется, когда твой ход) ── */
+  .inputbar{display:none;padding:8px;flex-direction:column;gap:6px}
+  .inputbar.on{display:flex;animation:pop .2s ease-out}
+  .inputbar .lbl{font-size:12px;color:var(--ink-soft);font-weight:600}
+  .inputrow{display:flex;gap:6px}
+  .inputrow input{
+    flex:1;min-width:0;font-family:inherit;font-size:14px;
+    padding:9px 11px;border:2px solid var(--line);background:#fff;color:var(--ink);
+  }
+  .inputrow input:focus{outline:none;box-shadow:inset 0 0 0 2px var(--think-br)}
+  .btn{font-family:var(--ui-font);font-weight:700;font-size:14px;
+    padding:9px 16px;border:2px solid var(--line);cursor:pointer;white-space:nowrap}
+  .btn.say{background:#f3d24e;color:#3a2e00}
+  .btn.skip{background:var(--paper-2);color:#3d3d3d}
+  .btn:active{transform:translateY(1px)}
+
+  #voteMode #voteReason{
+    width:100%;font-family:inherit;font-size:14px;margin-bottom:6px;
+    padding:8px 11px;border:2px solid var(--line);background:#fff;color:var(--ink);
+  }
+  #voteMode #voteReason:focus{outline:none;box-shadow:inset 0 0 0 2px var(--think-br)}
+  #whisperMode #whisperText{
+    width:100%;font-family:inherit;font-size:14px;margin-bottom:6px;
+    padding:8px 11px;border:2px solid var(--line);background:#fff;color:var(--ink);
+  }
+  #whisperMode #whisperText:focus{outline:none;box-shadow:inset 0 0 0 2px var(--whisp-br)}
+  .reply-from{font-size:13px;color:var(--whisp-tx);background:var(--whisp-bg);border:1px solid var(--whisp-br);padding:6px 9px;margin-bottom:6px;line-height:1.4}
+  #replyMode #replyText{width:100%;font-family:inherit;font-size:14px;margin-bottom:6px;padding:8px 11px;border:2px solid var(--line);background:#fff;color:var(--ink)}
+  #replyMode #replyText:focus{outline:none;box-shadow:inset 0 0 0 2px var(--whisp-br)}
+  .plaque.check{background:#e5eecf;border-color:#a9c47e;color:#3c5417}
+  .plaque.check .who{color:#4a6b1e}
+  .votebtns{display:flex;flex-wrap:wrap;gap:5px}
+  .votebtn{
+    font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;
+    padding:7px 12px;border:2px solid var(--line);background:var(--paper-2);
+  }
+  .votebtn:hover{background:#fff}
+  .votebtn:active{transform:translateY(1px)}
+  .votebtn.suggested{background:var(--mafia-bg);border-color:var(--mafia-tx);color:var(--mafia-tx)}
+  .votebtn.off{opacity:.35;pointer-events:none}
+
+  /* ── ТЕЛЕФОН (узкий или лёжа): максимум места чату ─────── */
+  @media (max-width:600px), (max-height:500px){
+    body{padding:4px}
+    .machine{height:calc(100vh - 8px);height:calc(100dvh - 8px);gap:4px}
+    .panel{border-width:2px;box-shadow:2px 2px 0 rgba(44,44,40,.18)}
+    /* шапка в одну строку: [МАФИЯ][роль/день] … [👁][🚪][⚙️] */
+    .topbar{gap:4px;padding:4px}
+    .title{font-size:18px;padding:3px 8px}
+    .chip{padding:3px 8px;font-size:13px}
+    .chip.day .day-role{font-size:14px}
+    .chip.mode .eye-txt{display:none}
+    .chip.mode,.chip.door,.chip.gear,.chip.lb,.chip.shop{min-width:36px;padding:3px 6px;justify-content:center}
+  }
+  /* совсем узкие телефоны: в шапке шесть кнопок — ужимаемся, чтобы шестерёнка не уезжала за край */
+  @media (max-width:400px){
+    .topbar{gap:3px;padding:3px}
+    .title{font-size:16px;padding:3px 6px}
+    .chip{padding:3px 6px}
+    .chip.mode,.chip.door,.chip.gear,.chip.lb,.chip.shop{min-width:0;flex:0 1 32px;padding:3px 2px;font-size:14px}
+    /* стол: 8 в ряд (при 16 игроках — 2 ряда), компактно */
+    .seatsWrap{padding:3px}
+    .seats{gap:2px}
+    .ava{font-size:18px}
+    .seat .nm{font-size:10px;margin-top:2px}
+    .seat .role{font-size:9px}
+    .bar{height:3px;margin-top:2px}
+    .summary{font-size:11px;padding:3px 6px;gap:1px 8px}
+    .feedWrap{padding:3px}
+    .feed{padding:2px 3px 2px 2px;gap:5px}
+    .plaque{font-size:14px;padding:6px 8px}
+    .inputbar{padding:6px}
+    /* iPhone увеличивает страницу при фокусе на поле с шрифтом < 16px — даём 16 */
+    .inputrow input,#voteReason,#whisperText,#replyText,.modal-card input{font-size:16px}
+    .btn{padding:8px 12px}
+  }
+  /* телефон лёжа: экран низкий — лица в узкую полоску, чтобы чату осталось место */
+  @media (max-height:500px){
+    .machine{max-width:none}   /* лёжа экран широкий — занимаем его целиком */
+    .seats{grid-template-columns:repeat(auto-fit,minmax(46px,1fr))}   /* и сажаем до 16 игроков в один ряд */
+    .ava{aspect-ratio:auto;height:34px}
+    .ava img{object-position:center 25%}
+    .seat .nm{margin-top:1px}
+  }
+  .feed::-webkit-scrollbar{width:12px}
+  .feed::-webkit-scrollbar-thumb{background:var(--paper-2);border:2px solid var(--line)}
+</style>
+</head>
+<body class="blind">
+  <div class="conn" id="conn">подключение…</div>
+  <div class="toast" id="toast"></div>
+  <div class="machine">
+
+    <div class="panel topbar">
+      <div class="title pixel">МАФИЯ<span class="vip-badge" id="vipBadge" style="display:none" title="VIP">👑</span><span class="sh-badge" id="shBadge" onclick="shieldInfo()" title="Щиты">🛡<b id="shCount">0</b></span></div>
+      <div class="chip day pixel" id="dayChip" title="Твоя роль — нажми для памятки" onclick="if(myRole&&ROLE_MEMO[myRole])toast(memoOf(myRole),9000)"><span class="day-role" id="youRole"></span><span class="day-num">☀ <span id="dayLabel">День 1</span></span></div>
+      <div class="chip mode pixel locked" id="eyeBtn" onclick="toggleEye()" title="Глаз бога: показать роли, мысли и шёпот"><span class="eye">👁</span><span class="eye-txt">Глаз бога</span></div>
+      <div class="chip lb pixel" id="lbBtn" title="Турнирная таблица" onclick="openLeaderboard()">🏆</div>
+      <div class="chip gear pixel" id="gearBtn" title="Настройки" onclick="openSettings()">⚙️</div>
+    </div>
+
+    <div class="panel seatsWrap">
+      <div class="seats" id="seats"></div>
+    </div>
+
+    <div class="panel summary" id="summary">
+      <span>Партия ещё не началась</span>
+    </div>
+
+    <div class="panel feedWrap">
+      <button class="shieldBtn" id="shieldBtn" title="Поставить щит" onclick="askShield()">🛡</button>
+      <div class="quitAsk" id="shieldAsk"><span id="shieldAskTxt"></span>
+        <div class="qa-row"><button class="qa-sh" onclick="doShield(this)">Поставить</button><button class="qa-no" onclick="closeShield()">Нет</button></div></div>
+      <button class="quitBtn" id="quitBtn" title="Завершить партию досрочно" onclick="askQuit()">🏳</button>
+      <div class="quitAsk" id="quitAsk">Завершить партию досрочно? Результат не засчитается.
+        <div class="qa-row"><button class="qa-yes" onclick="doQuit(this)">Да, завершить</button><button class="qa-no" onclick="closeQuit()">Нет</button></div></div>
+      <div class="feed" id="feed"></div>
+    </div>
+
+    <div class="panel inputbar" id="inputbar">
+      <div class="lbl" id="inputLbl">Ваша реплика</div>
+      <div class="inputrow" id="sayMode">
+        <input id="sayText" type="text" placeholder="Скажите что-нибудь…" autocomplete="off">
+        <button class="btn say" id="btnSay">Сказать</button>
+        <button class="btn skip" id="btnSkip">Молчать</button>
+      </div>
+      <div id="voteMode" style="display:none">
+        <input id="voteReason" type="text" placeholder="Причина (по желанию)…" autocomplete="off">
+        <div class="votebtns" id="voteBtns"></div>
+      </div>
+      <div id="whisperMode" style="display:none">
+        <input id="whisperText" type="text" placeholder="Что шепнуть (по желанию)…" autocomplete="off">
+        <div class="votebtns" id="whisperBtns"></div>
+        <button class="btn skip" id="btnNoWhisper" style="margin-top:6px">Не шептаться</button>
+      </div>
+      <div id="replyMode" style="display:none">
+        <div id="replyFrom" class="reply-from"></div>
+        <input id="replyText" type="text" placeholder="Твой ответ…" autocomplete="off">
+        <div class="votebtns" id="replyBtns"></div>
+      </div>
+    </div>
+
+  </div>
+
+<script>
+// ── палитра: xterm-256 → [r,g,b] (движок присылает числовой код цвета) ───────
+function rgb(code){
+  code=+code;
+  if(code>=16 && code<=231){
+    const n=code-16, r=Math.floor(n/36), g=Math.floor((n%36)/6), b=n%6;
+    const v=x=>x?55+40*x:0;
+    return [v(r),v(g),v(b)];
+  }
+  if(code>=232){const g=8+10*(code-232);return [g,g,g];}
+  return [136,136,136];
+}
+// насыщенный тёмный вариант — чтобы имена/роли не бледнили на светлой бумаге
+function deep(code){
+  let [r,g,b]=rgb(code);
+  const f=.60;                          // притемняем
+  r=Math.round(r*f);g=Math.round(g*f);b=Math.round(b*f);
+  return `rgb(${r},${g},${b})`;
+}
+function fill(code){const [r,g,b]=rgb(code);return `rgba(${r},${g},${b},.28)`;}
+function line(code){return deep(code);}
+
+const feed=document.getElementById('feed');
+const seatsEl=document.getElementById('seats');
+const summaryEl=document.getElementById('summary');
+const dayLabel=document.getElementById('dayLabel');
+const connEl=document.getElementById('conn');
+const inputbar=document.getElementById('inputbar');
+const sayText=document.getElementById('sayText');
+const inputLbl=document.getElementById('inputLbl');
+const sayMode=document.getElementById('sayMode');
+const voteMode=document.getElementById('voteMode');
+const voteBtns=document.getElementById('voteBtns');
+const voteReason=document.getElementById('voteReason');
+const whisperMode=document.getElementById('whisperMode');
+const whisperBtns=document.getElementById('whisperBtns');
+const whisperText=document.getElementById('whisperText');
+const replyMode=document.getElementById('replyMode');
+const replyText=document.getElementById('replyText');
+const replyBtns=document.getElementById('replyBtns');
+const replyFrom=document.getElementById('replyFrom');
+const dayChip=document.getElementById('dayChip');
+// Глаз бога: ОДНО состояние, из него — и кнопка, и видимость секретов (не могут разойтись).
+// Разрешение даёт сервер: бесплатно — после выбывания из игры или в конце партии; с премиумом — сразу.
+let eyeAllowed=false;
+function setEyeAllowed(ok){
+  eyeAllowed=ok;
+  const b=document.getElementById('eyeBtn');
+  b.classList.toggle('locked',!ok);
+  b.title = "Глаз бога: показать роли, мысли и шёпот";
+  if(!ok){ b.classList.remove('on'); document.body.classList.add('blind'); }
+}
+let needRebuild=false;   // глаз открылся, а секреты ещё не подгружены — перечитаем партию по первому нажатию 👁
+function toggleEye(){
+  if(eyeAllowed&&needRebuild){ needRebuild=false; stick=true; reconnect(); }
+  if(!eyeAllowed){ toast("👁 <b>Глаз Бога</b> покажет все роли, мысли и шёпот игроков — включится, как только начнётся партия.", 6000); return; }
+  const on=!document.getElementById('eyeBtn').classList.contains('on');
+  document.getElementById('eyeBtn').classList.toggle('on',on);
+  document.body.classList.toggle('blind',!on);
+}
+let toastTimer=null;
+function toast(html,ms=4500,onTap){
+  const t=document.getElementById('toast'); t.innerHTML=html; t.classList.add('on');
+  t.classList.toggle('tap',!!onTap); t.onclick=onTap?()=>{ t.classList.remove('on','tap'); onTap(); }:null;
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('on'),ms);
+}
+const youRoleEl=document.getElementById('youRole');
+
+let players=[];            // [{name,c,role,alive}]
+let tableSetup=null;       // состав стола {mafia:2,...} — публичен; живых по ролям считаем без подсматривания
+let myName=null;           // имя человека за столом
+const roleRu={mafia:"Мафия",maniac:"Маньяк",komissar:"Комиссар",doctor:"Доктор",civilian:"Мирный",putana:"Путана",bomzh:"Бомж"};
+const roleIco={mafia:"🔪",maniac:"🩸",komissar:"🔍",doctor:"🩺",civilian:"🙂",putana:"🌹",bomzh:"🍾"};
+// Памятка роли: показывается карточкой в начале партии и по тапу на свою роль в шапке
+const ROLE_MEMO={
+  mafia:"🔪 <b>Ты — мафия.</b> Ночью вместе с напарниками выбираете одну жертву. Днём притворяйся мирным и отводи подозрения. Мафия побеждает, когда её не меньше, чем остальных.",
+  maniac:"🩸 <b>Ты — маньяк</b>, сам за себя. Каждую ночь убиваешь одного любого. Днём прикидывайся мирным. Победа — остаться последним.",
+  komissar:"🔍 <b>Ты — комиссар</b>, за деревню. Ночью проверяешь одного и узнаёшь его роль. Можно шепнуть союзнику. Раскроешься — станешь мишенью.",
+  doctor:"🩺 <b>Ты — доктор</b>, за деревню. Ночью спасаешь одного от смерти, можно и себя.",
+  civilian:"🙂 <b>Ты — мирный</b>, за деревню. Ночью спишь, днём по спорам вычисляешь злодеев и голосуешь.",
+  putana:"🌹 <b>Ты — путана</b>, за деревню. Ночью приходишь к одному — его ночной ход срывается. Подержала любого мафиози — мафия этой ночью без убийства; маньяка — без его убийства. Не мешай своим: доктору, комиссару, бомжу.",
+  bomzh:"🍾 <b>Ты — бомж</b>, за деревню. Ночью дежуришь у дома одного игрока и видишь, кто туда приходил. Хозяина утром нашли мёртвым — убийца среди пришедших, а если приходил один — он и есть убийца.",
+};
+const memoOf=r=>(ROLE_MEMO[r]||"").replace(", комиссару, бомжу", tableSetup&&tableSetup.bomzh?", комиссару, бомжу":" и комиссару")+(r&&r!=="mafia"&&r!=="maniac"?" Деревня побеждает, когда выбыли вся мафия и маньяк.":"");
+let myRole=null;
+let isVip=false, gameOver=false;
+// кружок виден, только если: твой герой выбыл, партия ещё идёт
+function updateQuit(){
+  const me=players.find(p=>p.name===myName);
+  const show=isVip && !gameOver && !!me && !me.alive;
+  document.getElementById('quitBtn').classList.toggle('on',show);
+  if(!show) closeQuit();
+}
+// ── Щиты ──
+let shLeft=0, shUsed=0, shMax=2, phase=null, phaseDay=0, shArmed=null;
+function setShields(n){ shLeft=n; document.getElementById('shCount').textContent=n; document.getElementById('shBadge').classList.toggle('zero',!n); updateShield(); }
+function shieldInfo(){
+  toast(`🛡 <b>Щит</b> спасает от смерти: ставь ночью или днём до голосования. Сгорает в любом случае — сработал он или нет. Не больше ${shMax} за партию.<br>У тебя: <b>${shLeft}</b>. Каждый день — 1 щит в подарок.`,8000);
+}
+function updateShield(){
+  const me=players.find(p=>p.name===myName);
+  const key=phase+":"+phaseDay;
+  const show=!gameOver && !!me && me.alive && (phase==="night"||phase==="day") && shArmed!==key && shUsed<shMax && shLeft>0;
+  document.getElementById('shieldBtn').classList.toggle('on',show);
+  if(!show) closeShield();
+}
+function askShield(){
+  document.getElementById('shieldAskTxt').textContent=(phase==="night"?"Поставить щит на эту ночь?":"Поставить щит на голосование?")+` Сгорит в любом случае. Останется: ${shLeft-1}.`;
+  document.getElementById('shieldAsk').classList.toggle('on');
+}
+function closeShield(){ document.getElementById('shieldAsk').classList.remove('on'); }
+async function doShield(btn){
+  btn.disabled=true;
+  try{ const r=await fetch('/shield',{method:'POST'}); const d=await r.json().catch(()=>({}));
+    if(!r.ok){ toast(d.error||'Щит не поставился'); closeShield(); updateShield(); }
+    else { shUsed=d.used; setShields(d.left); closeShield(); } }
+  catch(_){ toast('Сервер не отвечает'); }
+  btn.disabled=false;
+}
+function askQuit(){ document.getElementById('quitAsk').classList.toggle('on'); }
+function closeQuit(){ document.getElementById('quitAsk').classList.remove('on'); }
+async function doQuit(btn){
+  btn.disabled=true; btn.textContent='Завершаю…';
+  try{ const r=await fetch('/quit',{method:'POST'}); if(!r.ok) throw 0; }
+  catch(_){ btn.disabled=false; btn.textContent='Да, завершить'; toast('Не получилось завершить — попробуй ещё раз'); }
+}
+const colorOf=n=>{const p=players.find(x=>x.name===n);return p?deep(p.c):"#333";};
+
+// ── отправка действия человека серверу (обратный канал) ──
+async function sendAction(body){
+  try{ await fetch('/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); }
+  catch(_){ /* демо-режим без сервера — глотаем */ }
+}
+function nameButtons(container, cands, onPick){
+  container.innerHTML="";
+  (cands||[]).forEach(name=>{
+    const b=document.createElement('button');
+    b.className="votebtn"; b.textContent=name;
+    b.style.color=colorOf(name); b.style.borderColor=colorOf(name);
+    b.onclick=()=>onPick(name);
+    container.appendChild(b);
+  });
+}
+let lastTurnKey=null;
+function showInput(e){
+  const kind=e.kind;
+  sayMode.style.display="none"; voteMode.style.display="none"; whisperMode.style.display="none"; replyMode.style.display="none";
+  if(kind==="say"){
+    inputLbl.textContent="Ваша реплика";
+    const key="say|"+dayLabel.textContent+"|"+e.round;     // тот же ход пришёл ещё раз (переподключение) — черновик не трогаем
+    if(key!==lastTurnKey) sayText.value="";
+    lastTurnKey=key;
+    sayMode.style.display=""; inputbar.classList.add('on'); sayText.focus();
+  } else if(kind==="vote" || kind==="check"){
+    inputLbl.textContent = kind==="vote" ? "Ваш голос — кого казнить?" : "Ночь. Кого проверить? Узнаешь его роль";
+    voteMode.style.display="";
+    voteReason.style.display = kind==="vote" ? "" : "none";
+    voteReason.value="";
+    nameButtons(voteBtns, e.candidates, (name)=>{
+      hideInput();
+      if(kind==="vote") sendAction({target:name, reason:voteReason.value.trim()});
+      else sendAction({target:name});
+    });
+    inputbar.classList.add('on');
+  } else if(kind==="kill_maniac"){
+    inputLbl.textContent="Ночь. Кого убить? Доктор может спасти"+(tableSetup&&tableSetup.putana?", путана — задержать тебя":"");
+    voteMode.style.display="";
+    voteReason.style.display="none";
+    nameButtons(voteBtns, e.candidates, (name)=>{ hideInput(); sendAction({target:name}); });
+    inputbar.classList.add('on');
+  } else if(kind==="kill_mafia"){
+    inputLbl.textContent = (e.suggest ? "Ночь. Напарник предлагает жертву — решай:" : "Ночь. Кого уберём?")+" Одна жертва на всю мафию";
+    voteMode.style.display="";
+    voteReason.style.display="none";
+    nameButtons(voteBtns, e.candidates, (name)=>{ hideInput(); sendAction({target:name}); });
+    if(e.suggest){   // подсветить предложенную напарником цель
+      voteBtns.querySelectorAll('.votebtn').forEach(b=>{
+        if(b.textContent===e.suggest){ b.classList.add('suggested'); b.textContent="👉 "+e.suggest; }
+      });
+    }
+    inputbar.classList.add('on');
+  } else if(kind==="visit"){
+    const hist=(e.history||[]).map(v=>`н${v.night} — ${v.name} (${v.busy?"выходил(а)":"спал(а)"})`).join(", ");
+    inputLbl.textContent="Ночь. К кому пойдёшь? Его ночной ход сорвётся; мафиози или маньяк — без убийства"+(hist?" · прошлые визиты: "+hist:"");
+    voteMode.style.display="";
+    voteReason.style.display="none";
+    nameButtons(voteBtns, e.candidates, (name)=>{ hideInput(); sendAction({target:name}); });
+    if(e.last){   // к кому ходила прошлой ночью — можно снова
+      voteBtns.querySelectorAll('.votebtn').forEach(b=>{ if(b.textContent===e.last){ b.classList.add('suggested'); b.textContent="🔁 "+e.last; } });
+    }
+    inputbar.classList.add('on');
+  } else if(kind==="watch"){
+    inputLbl.textContent="Ночь. У чьего дома дежуришь? Увидишь всех, кто туда придёт";
+    voteMode.style.display="";
+    voteReason.style.display="none";
+    nameButtons(voteBtns, e.candidates, (name)=>{ hideInput(); sendAction({target:name}); });
+    inputbar.classList.add('on');
+  } else if(kind==="heal"){
+    inputLbl.textContent="Ночь. Кого лечить? Если его этой ночью убьют — выживет";
+    voteMode.style.display="";
+    voteReason.style.display="none";
+    // себя — первой кнопкой с особой подписью, остальных — как есть
+    const others=(e.candidates||[]).filter(n=>n!==e.self);
+    const list=[e.self,...others];
+    nameButtons(voteBtns, list, (name)=>{ hideInput(); sendAction({target:name}); });
+    const first=voteBtns.querySelector('.votebtn');
+    if(first) first.textContent="🩺 Я (лечить себя)";
+    inputbar.classList.add('on');
+  } else if(kind==="doc_whisper"){
+    inputLbl.textContent="Ты спас "+(e.to||"")+". Шепнуть ему, что прикрыл?";
+    whisperMode.style.display="";
+    whisperText.value="";
+    whisperText.placeholder="Что шепнуть "+(e.to||"")+"…";
+    nameButtons(whisperBtns, [e.to], (name)=>{
+      const t=whisperText.value.trim();
+      if(!t){ whisperText.focus(); return; }
+      hideInput(); sendAction({text:t});
+    });
+    const first=whisperBtns.querySelector('.votebtn');
+    if(first) first.textContent="🔒 Шепнуть "+(e.to||"");
+    document.getElementById('btnNoWhisper').textContent="Не раскрываться";
+    const toggle=()=>{ const on=whisperText.value.trim().length>0;
+      whisperBtns.querySelectorAll('.votebtn').forEach(b=>b.classList.toggle('off',!on)); };
+    whisperText.oninput=toggle; toggle();
+    inputbar.classList.add('on'); whisperText.focus();
+  } else if(kind==="mafia_say"){
+    inputLbl.textContent=(e.many?"Сказать напарникам ":"Сказать напарнику ")+(e.to||"")+"? (жертва выбрана)";
+    whisperMode.style.display="";
+    whisperText.value="";
+    whisperText.placeholder=e.many?"Что шепнуть напарникам…":"Что шепнуть напарнику…";
+    nameButtons(whisperBtns, [e.to], (name)=>{
+      const t=whisperText.value.trim();
+      if(!t){ whisperText.focus(); return; }
+      hideInput(); sendAction({text:t});
+    });
+    const first=whisperBtns.querySelector('.votebtn');
+    if(first) first.textContent=e.many?"🔒 Шепнуть своим":"🔒 Шепнуть "+(e.to||"");
+    document.getElementById('btnNoWhisper').textContent="Пропустить";
+    const toggle=()=>{ const on=whisperText.value.trim().length>0;
+      whisperBtns.querySelectorAll('.votebtn').forEach(b=>b.classList.toggle('off',!on)); };
+    whisperText.oninput=toggle; toggle();
+    inputbar.classList.add('on'); whisperText.focus();
+  } else if(kind==="whisper"){
+    inputLbl.textContent="Шепнуть кому-то? Напиши сообщение, потом выбери кому:";
+    whisperText.placeholder="Что шепнуть (по желанию)…";
+    document.getElementById('btnNoWhisper').textContent="Не шептаться";
+    whisperMode.style.display="";
+    whisperText.value="";
+    nameButtons(whisperBtns, e.candidates, (name)=>{
+      const t=whisperText.value.trim();
+      if(!t){ whisperText.focus(); return; }   // без текста не шлём — никаких слов за тебя
+      hideInput(); sendAction({to:name, text:t});
+    });
+    const toggle=()=>{ const on=whisperText.value.trim().length>0;
+      whisperBtns.querySelectorAll('.votebtn').forEach(b=>b.classList.toggle('off',!on)); };
+    whisperText.oninput=toggle; toggle();
+    inputbar.classList.add('on'); whisperText.focus();
+  } else if(kind==="whisper_reply"){
+    inputLbl.textContent="Тебе шепчут — ответь или промолчи";
+    replyMode.style.display="";
+    replyFrom.textContent="🔒 "+(e.from||"?")+": "+(e.text||"");
+    replyText.value="";
+    replyBtns.innerHTML="";
+    const bAns=document.createElement('button'); bAns.className='votebtn'; bAns.textContent='Ответить';
+    bAns.onclick=()=>{ const t=replyText.value.trim(); if(!t){replyText.focus();return;} hideInput(); sendAction({text:t}); };
+    const bSil=document.createElement('button'); bSil.className='votebtn skip'; bSil.textContent='Промолчать';
+    bSil.onclick=()=>{ hideInput(); sendAction({text:""}); };
+    replyBtns.appendChild(bAns); replyBtns.appendChild(bSil);
+    inputbar.classList.add('on'); replyText.focus();
+  }
+}
+function hideInput(){ inputbar.classList.remove('on'); }
+function submitSay(){ if(!inputbar.classList.contains('on'))return; const t=sayText.value.trim(); hideInput(); sendAction({text:t, silent:!t}); }
+function submitSkip(){ if(!inputbar.classList.contains('on'))return; hideInput(); sendAction({silent:true}); }
+
+document.getElementById('btnSay').onclick=submitSay;
+document.getElementById('btnSkip').onclick=submitSkip;
+document.getElementById('btnNoWhisper').onclick=()=>{ if(!inputbar.classList.contains('on'))return; hideInput(); sendAction({skip:true}); };
+sayText.addEventListener('keydown',(e)=>{ if(e.key==="Enter")submitSay(); });
+
+function render(){
+  seatsEl.innerHTML="";
+  players.forEach(p=>{
+    const seat=document.createElement('div');
+    seat.className="seat"+(p.alive?"":" dead")+(p.name===myName?" me":"");
+    seat.innerHTML=`
+      <div class="ava" style="cursor:pointer" onclick="showBio('${(p.name||'').replace(/'/g,"\\'")}')" title="Досье">${(p.name||'?')[0]}${p.av?`<img src="avatars/${p.av}" alt="" onerror="this.remove()">`:''}</div>
+      <div class="nm" style="color:${deep(p.c)}">${p.name}</div>
+      <div class="role${p.alive&&p.name!==myName&&!(myRole==='mafia'&&p.role==='mafia')?' secret':''}" style="color:${deep(p.c)}">${roleRu[p.role]||''}</div>
+      <div class="bar"><i></i></div>`;
+    seatsEl.appendChild(seat);
+  });
+  renderSummary();
+}
+
+function renderSummary(){
+  if(!players.length){summaryEl.innerHTML="<span>Партия ещё не началась</span>";return;}
+  const alive=players.filter(p=>p.alive);
+  // живых в роли r = было за столом − вскрытые выбывшие (роли живых при закрытом глазе неизвестны)
+  const c=r=>tableSetup ? (tableSetup[r]||0)-players.filter(p=>!p.alive&&p.role===r).length
+                        : alive.filter(p=>p.role===r).length;
+  // роли-числа: мафия/маньяк — красным (враги), считаем живых. Новую роль добавить сюда одной строкой.
+  const counts=[["Мафия","mafia","bad"],["Маньяк","maniac","bad"]];
+  // роли-одиночки: показываем ✓ (кто-то жив) / ✗ (выбыл).
+  const flags=[["🔍 Комиссар","komissar"],["🩺 Доктор","doctor"]];
+  if(tableSetup&&tableSetup.putana) flags.push(["🌹 Путана","putana"]);
+  if(tableSetup&&tableSetup.bomzh) flags.push(["🍾 Бомж","bomzh"]);
+  const parts=[`<span>Живых: <b>${alive.length}</b></span>`];
+  counts.forEach(([lbl,r,cls])=>parts.push(`<span class="${cls}">${lbl}: <b>${c(r)}</b></span>`));
+  flags.forEach(([lbl,r])=>parts.push(
+    c(r)>0 ? `<span class="ok">${lbl} ✓</span>` : `<span class="no">${lbl} ✗</span>`));
+  parts.push(`<span class="ok">Мирные: <b>${c("civilian")}</b></span>`);   // мирные — зелёным, в конце
+  summaryEl.innerHTML=parts.join('<span class="sep">·</span>');
+}
+
+function atBottom(){return feed.scrollHeight-feed.scrollTop-feed.clientHeight<60;}
+// «Прилипание» к низу ленты запоминаем по ТВОЕЙ прокрутке, а не пересчитываем при каждом сообщении:
+// когда снизу выезжает панель голосования, лента становится ниже, но ты при этом никуда не листала — держим низ.
+let stick=true;
+feed.addEventListener('scroll',()=>{ stick=atBottom(); },{passive:true});
+if(window.ResizeObserver) new ResizeObserver(()=>{ if(stick) feed.scrollTop=feed.scrollHeight; }).observe(feed);
+function add(node){
+  node.classList.add('ev');
+  feed.appendChild(node);
+  if(stick){ feed.scrollTop=feed.scrollHeight; requestAnimationFrame(()=>{ if(stick) feed.scrollTop=feed.scrollHeight; }); }
+}
+function el(cls,html){const d=document.createElement('div');d.className=cls;if(/\b(think|act)\b/.test(cls))d.className+=" secret";d.innerHTML=html;return d;}
+const esc=s=>String(s).replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
+
+// точки «рассказчик печатает…»: одна штука внизу ленты, исчезает с приходом любого следующего события
+let typingEl=null;
+function showTyping(){
+  hideTyping();
+  typingEl=document.createElement('div');
+  typingEl.className='typing';
+  typingEl.innerHTML='<i></i><i></i><i></i>';
+  add(typingEl);
+}
+function hideTyping(){ if(typingEl){typingEl.remove();typingEl=null;} }
+
+// ── VIP и дневной лимит ──
+const ruDate=ts=>new Date(ts).toLocaleDateString('ru-RU',{day:'numeric',month:'long',timeZone:'Europe/Moscow'});
+function setVipBadge(){
+  document.getElementById('vipBadge').style.display='none';   // приложение: VIP нет — всё открыто всем
+}
+// плашка «бесплатные партии на сегодня закончились» (тексты — Иры)
+function limitBox(a){
+  const d=document.createElement('div'); d.className='limitbox ev'; d.id='limitBox';
+  d.innerHTML=a.ipLimit
+    ? `<p>🌙 С твоего интернета сегодня сыграно очень много партий. Новые — после полуночи по Москве.</p>`
+    : `<p>🌙 На сегодня всё: ${a.limit} партий сыграно. Деревня отдыхает — новые партии после полуночи по Москве.</p>`;
+  return d;
+}
+// ── Экран перед партией: бесплатно — классическая восьмёрка; VIP — ползунок размера стола и выбор роли ──
+const SETUP_KEY='mafia.setup';
+function loadPrefs(){ try{ return JSON.parse(localStorage.getItem(SETUP_KEY)||'{}')||{}; }catch(_){ return {}; } }
+function savePrefs(p){ try{ localStorage.setItem(SETUP_KEY, JSON.stringify(p)); }catch(_){} }
+const ROLE_ORDER=["mafia","maniac","komissar","doctor","putana","bomzh","civilian"];
+// фишки состава; «новенькие» (которых не было на столе на одного меньше) подпрыгивают
+function chipsHtml(t, prev){
+  return ROLE_ORDER.filter(r=>t[r]).map(r=>`<span class="st-chip r-${r}${prev&&!prev[r]?' new':''}">${roleIco[r]} ${r==='civilian'?'Мирные':roleRu[r]}${t[r]>1?' ×'+t[r]:''}</span>`).join('');
+}
+async function showSetup(){
+  players=[]; tableSetup=null; myRole=null; feed.innerHTML=""; render(); hideInput(); updateQuit();
+  dayLabel.textContent="День 1"; dayChip.classList.remove('has-role');
+  let d=null; try{ d=await (await fetch('/setup')).json(); }catch(_){}
+  if(!d||!d.tables){ add(el("narr","Не удалось загрузить настройки партии — обнови страницу")); return; }
+  const a=d.account||{}, vip=!!a.vip;
+  setVipBadge(vip?(a.vipUntil||1):null);
+  if(typeof a.shields==="number") setShields(a.shields);
+  setEyeAllowed(vip);                                 // у VIP глаз без замочка и до начала партии
+  const prefs=loadPrefs();
+  let size=vip?Math.min(d.max,Math.max(d.min,+prefs.size||d.min)):d.max;   // размер стола — только у VIP
+  let role=vip?(prefs.role||null):null;
+  const box=document.createElement('div'); box.className='setupbox ev'; box.id='setupBox';
+  box.innerHTML=`<div class="st-title">🎲 Новая партия</div>
+    <div class="st-block st-vip">
+      <div class="st-vip-title">🪑 Твой стол</div>
+      <div class="st-size">Игроков: <b id="stN"></b></div>
+      <input type="range" id="stRange" min="${d.min}" max="${d.max}" step="1" value="${size}">
+      <div class="st-chips" id="stChips"></div>
+      <div class="st-lbl">Твоя роль</div>
+      <div class="st-pick" id="stPick"></div>
+      <button class="replay pixel" id="stPlayVip">▶ Играть</button>
+    </div>`;
+  add(box);
+  const rng=box.querySelector('#stRange');
+  const draw=()=>{
+    const n=+rng.value, t=d.tables[n];
+    box.querySelector('#stN').textContent=n;
+    box.querySelector('#stChips').innerHTML=chipsHtml(t, n>d.min?d.tables[n-1]:null);
+    if(role&&!t[role]) role=null;                     // такой роли на этом столе нет — снова «случайно»
+    const pick=box.querySelector('#stPick'); pick.innerHTML='';
+    [null,...ROLE_ORDER.filter(r=>t[r])].forEach(r=>{
+      const b=document.createElement('button');
+      b.className='st-role'+(r===role?' on':''); b.disabled=!vip;
+      b.textContent=r?roleIco[r]+' '+roleRu[r]:'🎲 Случайно';
+      b.onclick=()=>{ role=r; draw(); };
+      pick.appendChild(b);
+    });
+  };
+  rng.oninput=draw; draw();
+  const go=async(sz,rl,btn)=>{
+    btn.disabled=true; btn.textContent='Раздаём роли…';
+    if(vip) savePrefs({size:sz,role:rl});
+    try{ await fetch('/newgame',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({size:sz,role:rl})}); }catch(_){}
+    location.reload();
+  };
+  const p2=box.querySelector('#stPlayVip'); if(p2) p2.onclick=()=>go(+rng.value,role,p2);
+}
+
+// строка под очками: сколько партий сыграно сегодня из дневного потолка
+function acctLine(a){
+  const d=document.createElement('div'); d.className='acct-line ev';
+  d.textContent=`Сегодня сыграно ${Math.min(a.played,a.limit)} из ${a.limit} партий`;
+  return d;
+}
+
+// ── обработка событий от сервера ────────────────────────────────────────────
+function handle(e){
+  if(e.type!=="typing") hideTyping();
+  switch(e.type){
+    case "typing":
+      showTyping();break;
+    case "atmo":
+      add(el("atmo",esc(e.text)));break;
+    case "reset":
+      gameOver=false; updateQuit(); stick=true; phase=null; shArmed=null; shUsed=0; updateShield();
+      players=[];feed.innerHTML="";render();dayLabel.textContent="День 1";dayChip.classList.remove('has-role');hideInput();break;
+    case "phase":
+      phase=e.phase; phaseDay=e.day; updateShield();break;
+    case "shield":
+      // баланс здесь не трогаем: при перечитывании партии это событие старое — свежий баланс приходит в ответе сервера и в eye_state
+      shArmed=e.phase+":"+phaseDay; updateShield();
+      add(el("plaque shield-on",`<div class="who">🛡 Щит поставлен</div><div>${e.phase==="night"?"Этой ночью тебя не убить.":"На этом голосовании тебя не казнить."}</div>`));break;
+    case "eye_state":
+      if(e.open && !eyeAllowed && players.length) needRebuild=true;   // глаз открылся, пока связи не было
+      isVip=!!e.premium; setEyeAllowed(!!e.open);
+      if(e.shieldMax) shMax=e.shieldMax;
+      if(typeof e.shieldUsed==="number") shUsed=e.shieldUsed;
+      if(typeof e.shields==="number") setShields(e.shields); setVipBadge(e.premium ? (e.vipUntil||1) : null); break;
+    case "lobby":
+      if(!document.getElementById('setupBox')) showSetup();   // связь мигнула на экране выбора — выбор не сбрасываем
+      break;
+    case "limit":
+      // лимит на сегодня исчерпан: партии нет — только плашка
+      if(document.getElementById('limitBox')) break;
+      players=[];feed.innerHTML="";render();hideInput();
+      add(limitBox(e));break;
+    case "eye_unlocked":
+      // сервер открыл глаз. Всё скрытое придёт, только если перечитать партию — но лента при этом пересобирается
+      // и «прыгает», поэтому перечитываем не сразу, а когда игрок сам нажмёт 👁
+      setEyeAllowed(true); needRebuild=true;
+      document.getElementById('eyeBtn').classList.add('fresh');   // без всплывашки — не перекрываем итог; значок тихо пульсирует
+      break;
+    case "you":
+    myName=e.name; myRole=e.role; youRoleEl.textContent=roleRu[e.role]||e.role; dayChip.classList.add('has-role');render();
+      if(ROLE_MEMO[e.role]) add(el("plaque memo",memoOf(e.role)+`<div class="memo-hint">Памятка всегда под рукой — нажми на свою роль вверху</div>`));
+      break;
+    case "your_turn":
+      showInput(e);break;
+    case "your_turn_done":
+      hideInput();break;
+    case "check_result":
+      add(el("plaque check",`<div class="who">🔍 Твоя проверка</div><div><b>${esc(e.name)}</b> — ${roleRu[e.role]||esc(e.role)}</div>`));break;
+    case "mafia_pick":
+      add(el("plaque mafia",`<div class="who"><span class="tag">мафия</span>🔪 ${esc(e.from)} выбирает жертву</div><div><b style="color:${colorOf(e.target)}">${esc(e.target)}</b></div>`));break;
+    case "mates":
+      if(e.names&&e.names.length) add(el("plaque mafia",`<div class="who"><span class="tag">мафия</span>🔪 ${e.names.length>1?"Твои напарники":"Твой напарник"}</div><div>${e.names.map(n=>`<b style="color:${colorOf(n)}">${esc(n)}</b>`).join(", ")}</div>`));
+      break;
+    case "held":
+      add(el("plaque held",`<div class="who">${esc(e.title)}</div><div>${esc(e.text)}</div>`));break;
+    case "quit":
+      gameOver=true; updateQuit(); hideInput();
+      try{ if(src) src.close(); }catch(_){}
+      showSetup();                                     // чистит ленту и рисует экран новой партии…
+      add(el("narr","🏳 Партия завершена досрочно — не засчитана"));   // …а итог ставим над ним
+      break;
+    case "visit_result":
+      add(el("plaque check",`<div class="who">🌹 Твой визит</div><div>${esc(e.text.replace(/^🌹\s*/,""))}</div>`));break;
+    case "watch_result":{
+      const who=(e.seen||[]).length ? e.seen.map(x=>`<b style="color:${colorOf(x.name)}">${esc(x.name)}</b> ${esc(x.act)}`).join(", ")+"." : "никто не приходил.";
+      const out=e.left===undefined?'':(e.left?`<div>🚪 Сам(а) <b>${esc(e.name)}</b> ночью <b>выходил(а)</b> из дома.</div>`:`<div>🏠 Сам(а) <b>${esc(e.name)}</b> из дома не выходил(а).</div>`);
+      add(el("plaque check",`<div class="who">🍾 Твоё дежурство</div><div>У дома <b>${esc(e.name)}</b>: ${who}</div>${out}`));break;}
+    case "note":
+      add(el("narr",esc(e.text)));break;
+    case "roster":
+    tableSetup=e.setup||null;
+    players=e.players.map(p=>({name:p.name,c:p.c,av:p.av,role:p.role,alive:p.alive!==false,age:p.age,job:p.job,hobby:p.hobby,persona:p.persona}));
+      if(e.day)dayLabel.textContent="День "+e.day;
+      render();break;
+    case "day":
+      dayLabel.textContent="День "+e.day;break;
+    case "dead":{
+      const p=players.find(x=>x.name===e.name);if(p){p.alive=false;if(e.role)p.role=e.role;}render();updateQuit();updateShield();break;}
+    case "narrator":
+      add(el("narr",esc(e.text)));break;
+    case "say":{
+      const col=deep(e.c), me=e.name===myName;
+      add(el("plaque say"+(me?" mine":""),
+        `<div class="who"><span class="nm" style="color:${col}">${esc(e.name)}</span>${me?' <span class="you">(ты)</span>':''}</div>`+
+        `<div>${esc(e.text)}</div>`));break;}
+    case "silence":
+      add(el("narr",esc(e.name)+" промолчал…"));break;
+    case "think":
+      add(el("plaque think",
+        `<div class="who">${esc(e.name)}</div><div>${esc(e.text)}</div>`));break;
+        case "pm":{
+      const mafia=e.channel==="mafia";
+      const mine=e.from===myName||(e.to&&e.to.includes(myName));
+      add(el("plaque "+(mafia?"mafia":"whisper")+(mine?"":" secret"),
+        `<div class="who"><span class="tag">${mafia?"мафия":"шёпот"}</span>${esc(e.from)}</div>`+
+        `<div>${esc(e.text)}</div>`));break;}
+    case "act":
+      add(el("act",esc(e.text)));break;
+    case "result":
+      add(el("plaque death",
+        `<span class="skull">💀</span><span>${esc(e.text)}</span>`));break;
+    case "vote":
+      add(el("vote"+(e.voter===myName?" mine":""),`${esc(e.voter)}${e.voter===myName?' <span class="you">(ты)</span>':''} → <b>${esc(e.target)}</b>`+(e.reason?` · ${esc(e.reason)}`:"")));break;
+    case "gameover":
+      gameOver=true; updateQuit(); updateShield();
+      add(el("over",esc(e.text)));showReplay();break;
+    case "score":{
+      const line=document.createElement('div'); line.className='score-line ev';
+      line.textContent=`🏆 ${e.points>0?'+':''}${e.points} ${ptsWord(e.points)} за партию`+(e.rank?` · ты на ${e.rank}-м месте за неделю`:'');
+      line.title='Открыть турнирную таблицу'; line.onclick=openLeaderboard;
+      const rb=document.getElementById('replayBtn');
+      if(rb) feed.insertBefore(line,rb); else add(line);     // над кнопкой «Сыграть ещё»
+      if(e.acct){
+        const al=acctLine(e.acct);
+        if(rb) feed.insertBefore(al,rb); else add(al);
+        // партии на сегодня кончились — вместо «Сыграть ещё» плашка лимита
+        if(e.acct.played>=e.acct.limit){
+          if(rb) rb.remove();
+          if(!document.getElementById('limitBox')) add(limitBox(e.acct));
+        }
+      }
+      if(stick) feed.scrollTop=feed.scrollHeight;
+      break;}
+  }
+}
+
+// ── Настройки (колесико): смена ника ──
+// Мини-справка по клику на аву — ТОЛЬКО публичное досье, НИКОГДА роль/темперамент
+function showBio(name){
+  const p=players.find(x=>x.name===name);
+  if(!p) return;
+  document.getElementById('bioName').textContent=p.name;
+  const ava=document.getElementById('bioAva');
+  ava.innerHTML=p.av?`<img src="avatars/${p.av}" alt="" style="width:100%;height:100%;object-fit:cover;image-rendering:pixelated">`:'';
+  // пустое поле — прочерк; всё экранируем (досье живого игрока пишет он сам)
+  const v=x=>(x===null||x===undefined||x==='')?'—':esc(x);
+  const rows=[`<b>Возраст:</b> ${v(p.age)}`,`<b>Кто по жизни:</b> ${v(p.job)}`,`<b>Увлечения:</b> ${v(p.hobby)}`];
+  if(p.persona) rows.push(`<b>Характер:</b> ${esc(p.persona)}`);
+  document.getElementById('bioInfo').innerHTML=rows.join('<br>');
+  document.getElementById('bioModal').style.display='flex';
+}
+function closeBio(){ document.getElementById('bioModal').style.display='none'; }
+function openSettings(){
+  const msg=document.getElementById('setMsg'); msg.className='setmsg'; msg.textContent='';
+  const bmsg=document.getElementById('bioMsg'); bmsg.className='setmsg'; bmsg.textContent='';
+  document.getElementById('settings').style.display='flex';
+  fetch('/me').then(r=>r.json()).then(d=>{ if(d&&d.user){ const u=d.user;
+    document.getElementById('nickInput').value=u.name;
+    document.getElementById('bioAge').value=u.bio_age??'';
+    document.getElementById('bioJob').value=u.bio_job??'';
+    document.getElementById('bioHobby').value=u.bio_hobby??'';
+    const a=d.account||{};
+    const ai=document.getElementById('acctInfo');
+    ai.innerHTML = `Сегодня сыграно <b>${Math.min(a.played||0,a.limit||20)} из ${a.limit||20}</b> партий`;
+    loadAvatars(u.avatar); } }).catch(()=>{});
+  document.getElementById('nickInput').focus();
+}
+async function loadAvatars(current){
+  const grid=document.getElementById('avaGrid');
+  grid.innerHTML='<div class="ava-group-title">загрузка…</div>';
+  let data;
+  try{ data=await (await fetch('/avatars')).json(); }catch(_){ grid.innerHTML='<div class="ava-group-title">не удалось загрузить</div>'; return; }
+  grid.innerHTML='';
+  for(const [title,list] of [['Мужские',data.male||[]],['Женские',data.female||[]]]){
+    if(!list.length) continue;
+    const t=document.createElement('div'); t.className='ava-group-title'; t.textContent=title; grid.appendChild(t);
+    const g=document.createElement('div'); g.className='ava-grid';
+    for(const file of list){
+      const b=document.createElement('button');
+      b.className='ava-opt'+(file===current?' sel':'');
+      b.innerHTML='<img src="avatars/'+file+'" alt="">';
+      b.onclick=()=>chooseAvatar(file,b);
+      g.appendChild(b);
+    }
+    grid.appendChild(g);
+  }
+}
+async function chooseAvatar(file,btn){
+  const msg=document.getElementById('setMsg');
+  try{
+    const res=await fetch('/avatar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({file})});
+    const d=await res.json().catch(()=>({}));
+    if(!res.ok||d.error){ msg.className='setmsg err'; msg.textContent=d.error||'Не удалось сохранить'; return; }
+    document.querySelectorAll('.ava-opt.sel').forEach(e=>e.classList.remove('sel'));
+    btn.classList.add('sel');
+    msg.className='setmsg ok'; msg.textContent='Лицо сохранено — появится со следующей партии ✓';
+  }catch(e){ msg.className='setmsg err'; msg.textContent='Сервер не отвечает'; }
+}
+function closeSettings(){ document.getElementById('settings').style.display='none'; }
+async function saveNick(){
+  const msg=document.getElementById('setMsg');
+  const name=document.getElementById('nickInput').value.trim();
+  msg.className='setmsg'; msg.textContent='Сохраняю…';
+  try{
+    const res=await fetch('/rename',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})});
+    const d=await res.json().catch(()=>({}));
+    if(!res.ok||d.error){ msg.className='setmsg err'; msg.textContent=d.error||'Не удалось сохранить'; return; }
+    msg.className='setmsg ok'; msg.textContent='Ник сохранён — появится со следующей партии ✓';
+  }catch(e){ msg.className='setmsg err'; msg.textContent='Сервер не отвечает'; }
+}
+async function saveBio(){
+  const msg=document.getElementById('bioMsg');
+  const body={age:document.getElementById('bioAge').value.trim(),job:document.getElementById('bioJob').value.trim(),hobby:document.getElementById('bioHobby').value.trim()};
+  msg.className='setmsg'; msg.textContent='Сохраняю…';
+  try{
+    const res=await fetch('/bio',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const d=await res.json().catch(()=>({}));
+    if(!res.ok||d.error){ msg.className='setmsg err'; msg.textContent=d.error||'Не удалось сохранить'; return; }
+    msg.className='setmsg ok'; msg.textContent='«О себе» сохранено — появится со следующей партии ✓';
+  }catch(e){ msg.className='setmsg err'; msg.textContent='Сервер не отвечает'; }
+}
+// ── Турнирная таблица ──
+const ptsWord=n=>{const a=Math.abs(n)%100,b=a%10; return (a>10&&a<20)||b>4||b===0?'очков':b===1?'очко':'очка';};
+const gamesWord=n=>{const a=Math.abs(n)%100,b=a%10; return (a>10&&a<20)||b>4||b===0?'партий':b===1?'партия':'партии';};
+function openLeaderboard(){ document.getElementById('lbModal').style.display='flex'; loadLb('week'); }
+function closeLb(){ document.getElementById('lbModal').style.display='none'; }
+function lbRow(r){
+  return `<div class="lb-row${r.me?' me':''}"><span class="r">${r.rank}</span>`+
+    `<span class="a">${r.avatar?`<img src="avatars/${esc(r.avatar)}" alt="" onerror="this.remove()">`:''}</span>`+
+    `<span class="n">${esc(r.name)}${r.me?' (ты)':''}</span><span class="p">${r.points}</span><span class="g">${r.games}</span><span class="w">${r.winPct}%</span></div>`;
+}
+async function loadLb(period){
+  document.getElementById('lbWeek').classList.toggle('on',period==='week');
+  document.getElementById('lbAll').classList.toggle('on',period==='all');
+  const list=document.getElementById('lbList'); list.innerHTML='<div class="lb-empty">загрузка…</div>'; document.getElementById('lbMine').style.display='none';
+  let d; try{ d=await (await fetch('/leaderboard?period='+period)).json(); }catch(_){ list.innerHTML='<div class="lb-empty">не удалось загрузить</div>'; return; }
+  if(!d.top||!d.top.length){ list.innerHTML='<div class="lb-empty">'+(period==='week'?'На этой неделе ещё никто не доиграл партию. Будь первым!':'Пока пусто — доиграй партию!')+'</div>'; return; }
+  // закреплённая строка «Ты» — видна сразу, без прокрутки
+  const mine=document.getElementById('lbMine');
+  if(d.me){ mine.style.display=''; mine.textContent=`Ты: ${d.me.rank}-е место из ${d.total} · ${d.me.points} ${ptsWord(d.me.points)} · ${d.me.games} ${gamesWord(d.me.games)}`; }
+  else mine.style.display='none';
+  let html=d.top.map(lbRow).join('');
+  if(d.me && !d.top.some(r=>r.me)) html+='<div class="lb-gap">…</div>'+lbRow(d.me);   // себя видно всегда
+  else if(!d.me) html+='<div class="lb-gap">Тебя пока нет в таблице — доиграй партию до конца</div>';
+  list.innerHTML=html;
+}
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeSettings(); closeBio(); closeLb(); } });
+
+// кнопка «Сыграть ещё»: просим сервер забыть доигранную партию и перезагружаемся —
+// новая заведётся сама на /events (тем же комиссаром, как задано при запуске)
+function showReplay(){
+  if(document.getElementById('replayBtn')) return;
+  const b=document.createElement('button');
+  b.id='replayBtn'; b.className='replay pixel'; b.textContent='🔄 Сыграть ещё';
+  b.onclick=()=>{ try{ if(src) src.close(); }catch(_){} showSetup(); };   // сначала экран выбора, партия — по «Играть»
+  add(b);
+}
+
+// ── связь с сервером (SSE) + демо-заглушка, если сервера ещё нет ─────────────
+let gotReal=false, demoTimer=null, src=null;
+function reconnect(){ try{ if(src) src.close(); }catch(_){} hideInput(); connect(); }
+function connect(){
+  try{ src=new EventSource('/events'); }catch(_){ return startDemo(); }
+  src.onmessage=ev=>{
+    if(!gotReal){gotReal=true;stopDemo();connEl.textContent="● эфир";connEl.className="conn live";}
+    try{handle(JSON.parse(ev.data));}catch(_){}
+  };
+  src.onerror=()=>{ if(!gotReal) startDemo(); };
+}
+
+// демо крутит короткий сценарий — чтобы видеть оформление без сервера
+function startDemo(){
+  if(demoTimer||gotReal)return;
+  connEl.textContent="◐ демо (сервер не подключён)";connEl.className="conn demo";
+  let i=0;
+  const script=[
+    {type:"reset"},
+    {type:"roster",day:1,players:[
+      {name:"Мирумир",c:80,role:"mafia"},{name:"Сеструха",c:211,role:"civilian"},
+      {name:"Тень",c:145,role:"mafia"},{name:"Профессор",c:183,role:"komissar"},
+      {name:"Кабан",c:179,role:"maniac"},{name:"Фурия",c:211,role:"civilian"},
+      {name:"Кекс228",c:114,role:"doctor"},{name:"Трубач",c:111,role:"civilian"}]},
+    {type:"narrator",text:"Ночь 1. Деревня засыпает."},
+    {type:"typing"},
+    {type:"atmo",text:"🔪 Маньяк надел перчатки. Не от холода."},
+    {type:"pm",channel:"mafia",from:"Мирумир",text:"Тень, предлагаю убить Фурию — активные всегда опасны. Днём держимся порознь, изображаем мирных."},
+    {type:"pm",channel:"mafia",from:"Тень",text:"Согласна. Днём я первая скажу, что она давила слишком уверенно."},
+    {type:"act",text:"🔪 мафия целится в: Трубач"},
+    {type:"act",text:"🩺 доктор (Кекс228) лечит: Кекс228"},
+    {type:"act",text:"🔍 комиссар (Профессор) проверяет: Тень → МАФИЯ"},
+    {type:"day",day:1},
+    {type:"narrator",text:"День 1."},
+    {type:"result",text:"Ночная жертва: Трубач — Мирный."},
+    {type:"dead",name:"Трубач"},
+    {type:"narrator",text:"круг обсуждения 1/2"},
+    {type:"think",name:"Кабан",text:"Трубач убит — он мирный. Один труп, всё ровно, доктор явно кого-то прикрыл. Тяну игру, я маньяк."},
+    {type:"say",name:"Кабан",c:179,text:"Ну чё, кто-то ж мочканул Трубача. Я спал как убитый, зуб даю."},
+    {type:"say",name:"Профессор",c:183,text:"Тень, ты подозрительно тихо себя ведёшь. Присмотримся к тебе."},
+    {type:"vote",voter:"Фурия",target:"Тень",reason:"молчит весь день"},
+    {type:"gameover",text:"🏆 ДЕРЕВНЯ ПОБЕДИЛА"},
+  ];
+  demoTimer=setInterval(()=>{
+    if(gotReal||i>=script.length){stopDemo();return;}
+    handle(script[i++]);
+  },1100);
+}
+function stopDemo(){if(demoTimer){clearInterval(demoTimer);demoTimer=null;}}
+
+connect();
+</script>
+<div class="modal pixel" id="bioModal" style="display:none" onclick="if(event.target===this)closeBio()">
+  <div class="modal-card">
+    <div class="modal-head"><span id="bioName"></span><span class="x" onclick="closeBio()">✕</span></div>
+    <div id="bioAva" style="width:120px;aspect-ratio:5/4;margin:0 auto 12px;border:2px solid var(--line);background:#cfcabc;overflow:hidden"></div>
+    <div id="bioInfo" style="font-size:14px;line-height:1.7"></div>
+  </div>
+</div>
+<div class="modal pixel" id="lbModal" style="display:none" onclick="if(event.target===this)closeLb()">
+  <div class="modal-card lb-card">
+    <div class="modal-head"><span>🏆 Турнирная таблица</span><span class="x" onclick="closeLb()">✕</span></div>
+    <div class="lb-tabs"><button id="lbWeek" class="on" onclick="loadLb('week')">Неделя</button><button id="lbAll" onclick="loadLb('all')">Всё время</button></div>
+    <div class="lb-mine" id="lbMine" style="display:none"></div>
+    <div class="lb-row head"><span class="r">#</span><span></span><span>Игрок</span><span class="p" style="color:inherit">Очки</span><span class="g">Игр</span><span class="w">Побед</span></div>
+    <div class="lb-list" id="lbList"></div>
+    <div class="lb-rules">2 очка — твоя сторона победила и ты дожил · 1 очко — победила, но тебя уже нет.<br>Маньяк и мафия — одна команда «плохих». Неделя обнуляется в понедельник.</div>
+  </div>
+</div>
+<div class="modal pixel" id="settings" style="display:none" onclick="if(event.target===this)closeSettings()">
+  <div class="modal-card">
+    <div class="modal-head"><span>⚙️ Настройки</span><span class="x" onclick="closeSettings()">✕</span></div>
+    <div class="acct-top" id="acctInfo">…</div>
+    <label for="nickInput">Игровой ник</label>
+    <input id="nickInput" maxlength="16" autocomplete="off">
+    <button class="save" onclick="saveNick()">Сохранить ник</button>
+    <div class="setmsg" id="setMsg"></div>
+    <div class="bio-section">
+      <label>О себе (по желанию — увидят все за столом)</label>
+      <div class="bio-row">
+        <input id="bioAge" class="bio-age" type="number" min="18" max="99" placeholder="Возраст" autocomplete="off">
+        <input id="bioJob" maxlength="40" placeholder="Кто по жизни" autocomplete="off">
+      </div>
+      <input id="bioHobby" maxlength="40" placeholder="Увлечения" autocomplete="off" style="margin-top:6px">
+      <button class="save" onclick="saveBio()">Сохранить «о себе»</button>
+      <div class="setmsg" id="bioMsg"></div>
+    </div>
+    <div class="ava-section">
+      <label>Выбери своё лицо 👇</label>
+      <div id="avaGrid"></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

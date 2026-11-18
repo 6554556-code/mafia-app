@@ -1,0 +1,9 @@
+[Unit]
+# Разовая отправка сводки Мафии-ПРИЛОЖЕНИЯ в Telegram (запускает таймер mafia-app-stats.timer)
+Description=Mafia APP stats to Telegram
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/root/mafia-app
+ExecStart=/usr/bin/node stats.js telegram

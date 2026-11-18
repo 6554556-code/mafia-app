@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>МАФИЯ — игра с живыми ИИ</title>
+<meta name="description" content="Мафия против хитрых ИИ-персонажей: врут, спорят, блефуют. Вычисли мафию раньше, чем она вычислит тебя.">
+<meta name="theme-color" content="#0f1424">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Мафия с ИИ">
+<meta property="og:locale" content="ru_RU">
+<meta property="og:url" content="https://iplaymafia.com/">
+<meta property="og:title" content="МАФИЯ — игра с живыми ИИ">
+<meta property="og:description" content="Мафия против хитрых ИИ-персонажей: врут, спорят, блефуют. Вычисли мафию раньше, чем она вычислит тебя.">
+<meta property="og:image" content="https://iplaymafia.com/img/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://iplaymafia.com/img/og.jpg">
+<link rel="preload" as="image" href="img/splash.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f2efe6; --paper-2:#e9e5d8;
+    --ink:#2c2c28; --ink-soft:#5a5a52; --line:#2c2c28;
+    --red:#b5352c; --red-bg:#f6d9d8; --red-br:#d98f8c;
+    --night:#0f1424;
+    --ui-font:"JetBrains Mono",ui-monospace,"DejaVu Sans Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:var(--night);color:var(--ink);
+    font-family:var(--ui-font);
+    display:grid;place-items:center;overflow:hidden;
+    height:100vh;height:100dvh;
+  }
+  .pixel{font-family:"Pixelify Sans",ui-monospace,monospace}
+
+  /* ── заставка: картинка целиком, в пропорциях телефона ── */
+  .bg{position:fixed;inset:-40px;background:url(img/splash-bg.jpg) center/cover;filter:blur(24px) brightness(.45);z-index:0}
+  .splash{
+    position:relative;z-index:1;
+    width:min(100vw, calc(100dvh * 9 / 16));
+    aspect-ratio:720/1280;
+    box-shadow:0 0 60px rgba(0,0,0,.6);
+  }
+  .splash img{display:block;width:100%;height:100%;user-select:none;-webkit-user-drag:none}
+  /* невидимые кнопки ровно поверх нарисованных «Вход» и «Правила» (в % от картинки 720×1280) */
+  .hot{
+    position:absolute;border:0;padding:0;margin:0;cursor:pointer;
+    background:transparent;border-radius:6px;
+    -webkit-tap-highlight-color:transparent;
+    transition:background .12s, box-shadow .12s, transform .08s;
+  }
+  .hot-login{left:21.5%;top:77.9%;width:57%;height:7.8%}
+  .hot-rules{left:21.8%;top:86.7%;width:56.3%;height:6.6%}
+  /* кнопка «i» в правом верхнем углу, на уровне 18+ — ведёт на страницу с ценами, контактами и документами */
+  .info-btn{position:absolute;left:87%;top:2%;width:11%;z-index:2;display:block;border-radius:8px;
+    -webkit-tap-highlight-color:transparent;transition:filter .12s, transform .08s}
+  .info-btn img{width:100%;height:auto}
+  .info-btn:hover{filter:brightness(1.12) drop-shadow(0 0 10px rgba(255,200,80,.55))}
+  .info-btn:active{transform:translateY(1px)}
+  .info-btn:focus-visible{outline:3px solid #ffd76a;outline-offset:2px}
+  .hot:hover{background:rgba(255,240,200,.10);box-shadow:0 0 18px rgba(255,200,80,.45)}
+  .hot:active{background:rgba(0,0,0,.18);transform:translateY(1px)}
+  .hot:focus-visible{outline:3px solid #ffd76a;outline-offset:2px}
+  /* лёгкое «дыхание» главной кнопки — подсказка, что сюда жать */
+  .hot-login{animation:glow 2.6s ease-in-out infinite}
+  @keyframes glow{0%,100%{box-shadow:0 0 0 rgba(255,190,60,0)}50%{box-shadow:0 0 22px rgba(255,190,60,.55)}}
+  @media (prefers-reduced-motion:reduce){.hot-login{animation:none}}
+
+  /* ── окна (вход/регистрация и правила) ── */
+  .sheet{position:fixed;inset:0;z-index:10;display:none;align-items:center;justify-content:center;padding:14px;background:rgba(10,12,20,.62)}
+  .sheet.on{display:flex;animation:fade .18s ease-out}
+  /* документ поверх регистрации: закрыл — и ты снова в форме, введённое на месте */
+  #sheet-doc{z-index:20}
+  .doc-card{position:relative;width:100%;max-width:760px;height:calc(100dvh - 28px);background:var(--paper);border:3px solid var(--line);
+    box-shadow:4px 4px 0 rgba(0,0,0,.35);display:flex;flex-direction:column}
+  .doc-card iframe{flex:1;width:100%;border:0;background:var(--paper)}
+  .doc-card .close{z-index:2;background:var(--paper);border-radius:4px;top:4px;right:6px}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .card{
+    position:relative;width:100%;max-width:400px;max-height:calc(100dvh - 28px);overflow-y:auto;
+    background:var(--paper);border:3px solid var(--line);
+    box-shadow:inset 0 0 0 2px var(--paper), 4px 4px 0 rgba(0,0,0,.35);
+    padding:20px 18px;
+  }
+  .close{position:absolute;right:8px;top:6px;border:0;background:none;font-size:20px;cursor:pointer;color:var(--ink-soft);padding:6px}
+  .close:hover{color:var(--ink)}
+  .brand{text-align:center;font-size:30px;font-weight:700;letter-spacing:2px;margin-bottom:2px}
+
+  .tabs{display:flex;gap:6px;margin:16px 0 14px}
+  .tab{flex:1;text-align:center;cursor:pointer;user-select:none;padding:8px 0;font-size:14px;font-weight:700;
+    background:var(--paper-2);border:2px solid var(--line);color:var(--ink-soft)}
+  .tab.on{background:var(--red);color:#fff}
+  label{display:block;font-size:12px;letter-spacing:.3px;margin:12px 0 4px;color:var(--ink-soft)}
+  input{width:100%;padding:9px 10px;font-size:16px;font-family:inherit;color:var(--ink);background:#fbfaf5;border:2px solid var(--line);outline:none}
+  input:focus{border-color:var(--red)}
+  .btn{width:100%;margin-top:18px;padding:11px 0;cursor:pointer;font-family:inherit;font-size:16px;font-weight:700;letter-spacing:1px;
+    background:var(--red);color:#fff;border:2px solid var(--line);box-shadow:3px 3px 0 rgba(44,44,40,.25)}
+  .btn:active{transform:translate(1px,1px);box-shadow:2px 2px 0 rgba(44,44,40,.25)}
+  .btn:disabled{opacity:.6;cursor:default}
+  .msg{margin-top:14px;padding:9px 10px;font-size:13px;display:none}
+  .msg.err{display:block;background:var(--red-bg);border:2px solid var(--red-br);color:var(--red)}
+
+  /* 18+ — значок в углу заставки и строка под кнопкой регистрации */
+  .age18{position:absolute;left:3%;top:2%;z-index:2;font-family:var(--ui-font);font-weight:700;font-size:clamp(12px,3.4vw,16px);
+    color:#fff;background:rgba(181,53,44,.92);border:2px solid #fff;border-radius:50%;
+    width:2.9em;height:2.9em;display:grid;place-items:center;box-shadow:0 2px 8px rgba(0,0,0,.5);pointer-events:none}
+  .agree{margin-top:10px;font-size:12px;line-height:1.45;color:var(--ink-soft);text-align:center}
+  .chk{display:flex;gap:9px;align-items:flex-start;margin:12px 0 0;font-size:12.5px;line-height:1.45;color:var(--ink);letter-spacing:0;cursor:pointer}
+  .chk input{flex:none;width:18px;height:18px;margin:1px 0 0;accent-color:var(--red);cursor:pointer}
+  .chk a{color:var(--red)}
+  .chk.need span{color:var(--red);font-weight:700}
+  .forgot-link{text-align:center;margin-top:12px;font-size:13px}
+  .forgot-link a{color:var(--red)}
+  .fp-text{font-size:13px;line-height:1.5;color:var(--ink-soft);margin:12px 0 0;text-align:center}
+  .msg.ok{display:block;background:#e3f1e6;border:2px solid #8cc39b;color:#2f6f43}
+  .agree a{color:var(--red)}
+
+  /* правила */
+  .rules h2{font-size:15px;margin:16px 0 6px;letter-spacing:.3px}
+  .rules p{font-size:14px;line-height:1.55;margin:0 0 8px}
+  .rules .role{display:flex;gap:9px;align-items:baseline;font-size:14px;line-height:1.5;margin:5px 0}
+  .rules .role .i{flex:none;width:22px;text-align:center}
+  .rules .tip{margin-top:14px;padding:9px 10px;background:var(--paper-2);border:2px dashed var(--ink-soft);font-size:13px;line-height:1.5}
+</style>
+</head>
+<body>
+  <div class="bg" aria-hidden="true"></div>
+
+  <main class="splash">
+    <img src="img/splash.jpg" alt="МАФИЯ: ночной город, мафиози в белом костюме, роковая дама и бродяга">
+    <div class="age18" title="Игра для взрослых">18+</div>
+    <button class="hot hot-login" aria-label="Вход" onclick="openSheet('auth')"></button>
+    <button class="hot hot-rules" aria-label="Правила" onclick="openSheet('rules')"></button>
+    <a class="info-btn" href="info.html" aria-label="Контакты и документы" title="Контакты и документы"><img src="img/btn-info.png" width="111" height="109" alt="i"></a>
+  </main>
+
+  <!-- Вход / регистрация -->
+  <div class="sheet" id="sheet-auth" onclick="if(event.target===this)closeSheets()">
+    <div class="card" role="dialog" aria-label="Вход">
+      <button class="close" onclick="closeSheets()" aria-label="Закрыть">✕</button>
+      <div class="brand pixel">МАФИЯ</div>
+
+      <p class="fp-text">Почта и пароль не нужны — только ник.</p>
+      <label for="name">Как тебя звать за столом? (2–16 символов)</label>
+      <input id="name" type="text" maxlength="16" autocomplete="nickname" placeholder="твой ник">
+      <button class="btn" id="submit">ИГРАТЬ</button>
+      <div class="agree">Психологическая игра 18+. Нажимая «Играть», ты подтверждаешь, что тебе есть 18 лет, и принимаешь <a href="privacy.html" onclick="return openDoc(this)">политику конфиденциальности</a>.</div>
+      <div class="msg" id="msg"></div>
+    </div>
+  </div>
+
+  <!-- Правила -->
+  <div class="sheet" id="sheet-doc" onclick="if(event.target===this)closeDoc()">
+    <div class="doc-card" role="dialog" aria-label="Документ">
+      <button class="close" onclick="closeDoc()" aria-label="Закрыть">✕</button>
+      <iframe id="docFrame" title="Документ"></iframe>
+    </div>
+  </div>
+
+  <div class="sheet" id="sheet-rules" onclick="if(event.target===this)closeSheets()">
+    <div class="card rules" role="dialog" aria-label="Правила">
+      <button class="close" onclick="closeSheets()" aria-label="Закрыть">✕</button>
+      <div class="brand pixel">Как играть</div>
+      <p style="margin-top:12px">Ты за столом с семью персонажами. Каждому тайно выпадает роль. Кто есть кто — неизвестно: вычисляй по словам и поступкам.</p>
+
+      <div class="role"><span class="i">🔪</span><span><b>Мафия</b> (двое, на больших столах — трое): ночью вместе убирают одного, днём прикидываются мирными.</span></div>
+      <div class="role"><span class="i">🩸</span><span><b>Маньяк</b>: одиночка, каждую ночь убивает кого захочет, сам за себя.</span></div>
+      <div class="role"><span class="i">🔍</span><span><b>Комиссар</b>: ночью проверяет одного и узнаёт его роль.</span></div>
+      <div class="role"><span class="i">🩺</span><span><b>Доктор</b>: ночью спасает одного от смерти, можно и себя.</span></div>
+      <div class="role"><span class="i">🙂</span><span><b>Мирный</b>: ночью спит, днём вычисляет злодеев.</span></div>
+      <div class="role"><span class="i">🌹</span><span><b>Путана</b> (на столе от 9 игроков, за деревню): ночью приходит к одному игроку — его ночной ход срывается. Подержала любого мафиози — мафия этой ночью без убийства. Можно к одному и тому же каждую ночь.</span></div>
+      <div class="role"><span class="i">🍾</span><span><b>Бомж</b> (на столе от 11 игроков, за деревню): ночью дежурит у дома одного игрока и видит, кто туда приходил. Роли не видит.</span></div>
+
+      <h2>Ход игры</h2>
+      <div class="role"><span class="i">🌙</span><span><b>Ночь:</b> роли действуют тайно. Утром становится известно, кто погиб и кем он был.</span></div>
+      <div class="role"><span class="i">☀</span><span><b>День:</b> два круга обсуждения — обвиняй, оправдывайся, блефуй. Потом голосование: казнят одного, его роль вскрывается.</span></div>
+      <div class="role"><span class="i">🤫</span><span><b>Шёпот:</b> личные сообщения один на один.</span></div>
+
+      <h2>Кто побеждает</h2>
+      <div class="role"><span class="i">🏆</span><span><b>Деревня</b> — когда убиты вся мафия и маньяк. <b>Мафия</b> — когда её не меньше, чем остальных. <b>Маньяк</b> — когда остался последним.</span></div>
+
+      <div class="role" style="margin-top:12px"><span class="i">👁</span><span><b>Глаз бога</b> показывает роли, мысли и шёпот всех игроков. Включается кнопкой 👁 в любой момент — но с ним пропадает вся интрига, так что решай сам.</span></div>
+
+      <div class="tip">💡 Персонажи живые: врут, ссорятся, радуются и грустят. Настроение — тоже улика.</div>
+
+      <button class="btn" onclick="openSheet('auth')">ИГРАТЬ</button>
+    </div>
+  </div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const msg = $("msg"), btn = $("submit");
+
+  // Уже есть гость на этом устройстве (сессия жива) — «Вход» и «Играть» ведут сразу за стол
+  let loggedIn = false;
+  function checkSession(){
+    fetch("/me", { cache: "no-store" }).then(r => r.json()).then(d => { loggedIn = !!(d && d.user); }).catch(() => {});
+  }
+  checkSession();
+  // «Назад» из игры: браузер достаёт страницу из памяти вместе с выключенной кнопкой — оживляем её и перепроверяем вход
+  window.addEventListener("pageshow", (e) => { btn.disabled = false; hideMsg(); if (e.persisted) checkSession(); });
+
+  function openSheet(which){
+    if(which==="auth" && loggedIn){ location.href = "/"; return; }
+    closeSheets();
+    $("sheet-"+which).classList.add("on");
+    if(which==="auth") setTimeout(()=>$("name").focus(),50);
+  }
+  function closeSheets(){ document.querySelectorAll(".sheet").forEach(s=>s.classList.remove("on")); }
+  // политика — в этой же вкладке, поверх формы; крестик возвращает в форму
+  function openDoc(a){
+    $("docFrame").src = a.getAttribute("href") + "?embed=1";
+    $("sheet-doc").classList.add("on");
+    return false;
+  }
+  function closeDoc(){ $("sheet-doc").classList.remove("on"); }
+
+  function showErr(text){ msg.textContent = text; msg.className = "msg err"; }
+  function hideMsg(){ msg.className = "msg"; msg.textContent = ""; }
+
+  async function go(){
+    hideMsg();
+    const name = $("name").value.trim();
+    if(!name){ showErr("Напиши ник."); return; }
+    btn.disabled = true;
+    try{
+      const res = await fetch("/guest", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ name }) });
+      const data = await res.json().catch(() => ({}));
+      if(!res.ok || data.error){ showErr(data.error || "Что-то пошло не так, попробуй ещё раз."); btn.disabled = false; return; }
+      location.href = "/";   // успех — за стол
+    }catch(e){
+      showErr("Сервер не отвечает. Проверь интернет.");
+      btn.disabled = false;
+    }
+  }
+  btn.onclick = go;
+  // прямая ссылка на правила: /auth.html#rules (из раздела «Документы»)
+  if (location.hash === "#rules") openSheet("rules");
+  document.addEventListener("keydown", (e) => {
+    if(e.key === "Escape"){ if($("sheet-doc").classList.contains("on")) closeDoc(); else closeSheets(); }
+    if(e.key === "Enter" && $("sheet-auth").classList.contains("on")) go();
+  });
+</script>
+</body>
+</html>

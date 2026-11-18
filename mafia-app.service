@@ -1,0 +1,22 @@
+[Unit]
+# Смотритель Мафии-ПРИЛОЖЕНИЯ (App Store): держит игру запущенной в фоне,
+# поднимает после падения и после перезагрузки сервера.
+Description=Mafia APP game server (App Store, port 3001)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=root
+WorkingDirectory=/root/mafia-app
+# Боевой режим: живой игрок, случайная роль (HUMAN_ROLE не задан), модель через OpenRouter
+Environment=HUMAN=1
+Environment=PROVIDER=openrouter
+Environment=PACING_MS=0
+# порт 3001 и 20 партий в день — по умолчанию в коде (APP_PORT, APP_GAMES_PER_DAY)
+ExecStart=/usr/bin/node mafia-server.js
+# упала — через 3 секунды поднимаем снова
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
