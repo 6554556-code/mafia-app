@@ -159,7 +159,8 @@ function startWeb() {
   app.set("trust proxy", "loopback");   // за «привратником» (Caddy) на этом же сервере берём настоящий адрес игрока
   app.use(express.json());
   app.get("/", (req, res) => {
-    if (!auth.userByToken(auth.tokenFromReq(req))) return res.redirect("/auth.html");
+    const u = auth.userByToken(auth.tokenFromReq(req));
+    if (!u || !u.ai_ok) return res.redirect("/auth.html");   // нет гостя или нет согласия на ИИ — на заставку
     res.sendFile(require("path").join(__dirname, "public", "index.html"));
   });
   app.use(express.static(require("path").join(__dirname, "public")));
@@ -168,11 +169,20 @@ function startWeb() {
   app.post("/guest", (req, res) => {
     const k = "reg:" + req.ip;
     if (recent(k, REG_WIN).length >= REG_MAX) return res.status(429).json({ error: "Слишком много новых игроков с этого адреса. Попробуй через час." });
+    if ((req.body || {}).ai !== true) return res.status(400).json({ error: "Без согласия на ИИ играть не получится — все за столом ИИ." });
     const r = auth.guest((req.body || {}).name);
     if (r.error) return res.status(400).json({ error: r.error });
     hit(k);
     res.cookie("sid", r.token, { httpOnly: true, sameSite: "lax", path: "/", maxAge: 365 * 24 * 3600 * 1000 });
     res.json({ user: r.user });
+  });
+
+  // согласие на ИИ (для гостя, заведённого до экрана согласия)
+  app.post("/ai-consent", (req, res) => {
+    const me = auth.userByToken(auth.tokenFromReq(req));
+    if (!me) return res.status(401).json({ error: "Не вошёл" });
+    auth.setAiConsent(me.id);
+    res.json({ ok: true });
   });
 
   // Панель дежурного: живые цифры. Отвечает ТОЛЬКО запросу с самого сервера (node stats.js online);
@@ -321,7 +331,7 @@ function startWeb() {
     res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive" });
     res.write("\n");
     const me = auth.userByToken(auth.tokenFromReq(req));
-    if (!me) { res.end(); return; }                 // не вошёл — партии нет (замок и так не пустит)
+    if (!me || !me.ai_ok) { res.end(); return; }    // не вошёл или не согласился на ИИ — партии нет: ни одной реплики модели без согласия
     let S = sessions.get(me.id);
     const fresh = !S;
     if (fresh) {

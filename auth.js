@@ -41,6 +41,8 @@ try { db.exec("ALTER TABLE users ADD COLUMN vip_until INTEGER"); } catch (_) {}
 // Миграция: щиты. shields — купленные (не сгорают); shield_gift — день (МСК), когда уже взят подарочный щит.
 try { db.exec("ALTER TABLE users ADD COLUMN shields INTEGER NOT NULL DEFAULT 0"); } catch (_) {}
 try { db.exec("ALTER TABLE users ADD COLUMN shield_gift TEXT"); } catch (_) {}
+// когда игрок согласился, что его реплики, ник и «о себе» уходят ИИ через OpenRouter (правило App Store 5.1.2(i))
+try { db.exec("ALTER TABLE users ADD COLUMN ai_ok INTEGER"); } catch (_) {}
 // Миграция: почта и согласия.
 //   email_ok   — 1 = почта подтверждена (по ссылке из письма или входом с паролем из письма)
 //   pd_consent — когда дано согласие на обработку персональных данных (метка времени); у старых игроков NULL
@@ -59,7 +61,7 @@ db.exec(`
   );
 `);
 // Какие поля пользователя отдаём наружу (пароль и прочее — никогда)
-const USER_COLS = "id, email, name, avatar, bio_age, bio_job, bio_hobby, vip_until, email_ok, news";
+const USER_COLS = "id, email, name, avatar, bio_age, bio_job, bio_hobby, vip_until, email_ok, news, ai_ok";
 
 // Список .png в папке avatars/<sub>, в виде "<sub>/файл.png"
 function listDir(sub) {
@@ -140,10 +142,12 @@ function guest(name) {
   if (!validName(name)) return { error: "Ник: 2–16 символов — буквы, цифры, пробел, дефис или подчёркивание" };
   const nameLower = name.toLowerCase();
   if (db.prepare("SELECT id FROM users WHERE name_lower = ?").get(nameLower)) return { error: "Этот ник уже занят — придумай другой" };
-  const info = db.prepare("INSERT INTO users (name, name_lower, avatar, created) VALUES (?, ?, ?, ?)")
-    .run(name, nameLower, randomNeutral(), Date.now());
+  const info = db.prepare("INSERT INTO users (name, name_lower, avatar, created, ai_ok) VALUES (?, ?, ?, ?, ?)")
+    .run(name, nameLower, randomNeutral(), Date.now(), Date.now());   // гость создаётся только после согласия на ИИ
   return startSession(info.lastInsertRowid);
 }
+// согласие на ИИ для того, кто завёлся раньше, чем появился экран согласия
+function setAiConsent(userId) { db.prepare("UPDATE users SET ai_ok = ? WHERE id = ? AND ai_ok IS NULL").run(Date.now(), userId); }
 
 // ── Вход ──
 // allowTemp=false — запасной пароль из письма не проверяем (на эту почту уже было слишком много неверных попыток)
@@ -380,5 +384,5 @@ function shieldAdd(email, n) {
   return { user: db.prepare(`SELECT ${USER_COLS} FROM users WHERE id = ?`).get(u.id), info: shieldInfo(u) };
 }
 
-module.exports = { guest, makeGift, redeemGift, unsubSig, unsubscribe, db, issueTempPassword, changePassword, makeVerifyToken, confirmEmail, setNews, userById, funPassword, normEmail,
+module.exports = { guest, setAiConsent, makeGift, redeemGift, unsubSig, unsubscribe, db, issueTempPassword, changePassword, makeVerifyToken, confirmEmail, setNews, userById, funPassword, normEmail,
   shieldInfo, useShield, shieldAdd, register, login, logout, userByToken, tokenFromReq, rename, setAvatar, listAvatars, setBio, isVip, vipAdd, vipOff, vipList };
