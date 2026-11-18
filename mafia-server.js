@@ -169,7 +169,7 @@ function startWeb() {
   app.post("/guest", (req, res) => {
     const k = "reg:" + req.ip;
     if (recent(k, REG_WIN).length >= REG_MAX) return res.status(429).json({ error: "Слишком много новых игроков с этого адреса. Попробуй через час." });
-    if ((req.body || {}).ai !== true) return res.status(400).json({ error: "Без согласия на ИИ играть не получится — все за столом ИИ." });
+    if ((req.body || {}).ai !== true) return res.status(400).json({ error: "Без согласия на ИИ играть не получится." });
     const r = auth.guest((req.body || {}).name);
     if (r.error) return res.status(400).json({ error: r.error });
     hit(k);
@@ -182,6 +182,25 @@ function startWeb() {
     const me = auth.userByToken(auth.tokenFromReq(req));
     if (!me) return res.status(401).json({ error: "Не вошёл" });
     auth.setAiConsent(me.id);
+    res.json({ ok: true });
+  });
+
+  // «Удалить мои данные» (⚙️ Настройки): бросаем партию, стираем профиль, реплики и сессии; партии — только обезличенно
+  app.post("/delete-me", (req, res) => {
+    const me = auth.userByToken(auth.tokenFromReq(req));
+    if (!me) return res.status(401).json({ error: "Не вошёл" });
+    const S = sessions.get(me.id);
+    if (S) {
+      S.aborted = true;                                 // ИИ больше не зовём, движок тихо останавливается
+      if (S.pending) { const p = S.pending; S.pending = null; p.reject(abortError()); }
+      S.clients.forEach((c) => { try { c.end(); } catch (_) {} });
+      sessions.delete(me.id);
+    }
+    pendingStart.delete(me.id);
+    gamelog.forgetUser(me.id);
+    auth.deleteUser(me.id);
+    res.clearCookie("sid", { path: "/" });
+    console.log(`🗑 игрок #${me.id} удалил свои данные`);
     res.json({ ok: true });
   });
 

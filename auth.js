@@ -147,6 +147,11 @@ function guest(name) {
   return startSession(info.lastInsertRowid);
 }
 // согласие на ИИ для того, кто завёлся раньше, чем появился экран согласия
+// «Удалить мои данные»: профиль и сессии — навсегда
+function deleteUser(userId) {
+  db.prepare("DELETE FROM sessions WHERE user_id = ?").run(userId);
+  db.prepare("DELETE FROM users WHERE id = ?").run(userId);
+}
 function setAiConsent(userId) { db.prepare("UPDATE users SET ai_ok = ? WHERE id = ? AND ai_ok IS NULL").run(Date.now(), userId); }
 
 // ── Вход ──
@@ -384,5 +389,5 @@ function shieldAdd(email, n) {
   return { user: db.prepare(`SELECT ${USER_COLS} FROM users WHERE id = ?`).get(u.id), info: shieldInfo(u) };
 }
 
-module.exports = { guest, setAiConsent, makeGift, redeemGift, unsubSig, unsubscribe, db, issueTempPassword, changePassword, makeVerifyToken, confirmEmail, setNews, userById, funPassword, normEmail,
+module.exports = { guest, setAiConsent, deleteUser, makeGift, redeemGift, unsubSig, unsubscribe, db, issueTempPassword, changePassword, makeVerifyToken, confirmEmail, setNews, userById, funPassword, normEmail,
   shieldInfo, useShield, shieldAdd, register, login, logout, userByToken, tokenFromReq, rename, setAvatar, listAvatars, setBio, isVip, vipAdd, vipOff, vipList };

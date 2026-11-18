@@ -321,6 +321,16 @@
   .st-buy{display:inline-block;margin-left:6px;font-family:inherit;font-size:11px;font-weight:700;padding:2px 8px;
     background:var(--mafia-tx);color:#fff;border:1px solid var(--line);cursor:pointer}
   .buy-link{color:var(--mafia-tx);font-weight:700;text-decoration:underline;cursor:pointer}
+  /* «Удалить мои данные» */
+  .del-section{margin-top:18px;padding-top:12px;border-top:2px dashed #cfcabc;text-align:center}
+  .del-btn{font-family:inherit;font-size:13px;color:var(--ink-soft);background:none;border:0;text-decoration:underline;cursor:pointer;padding:6px}
+  .del-ask{display:none;text-align:left;font-size:13px;line-height:1.5;background:var(--mafia-bg);border:2px solid var(--mafia-br);padding:10px 12px;margin-top:6px}
+  .del-ask.on{display:block}
+  .del-ask p{margin:0 0 10px}
+  .del-row{display:flex;gap:8px}
+  .del-row button{flex:1;font-family:inherit;font-size:14px;font-weight:700;padding:9px 0;cursor:pointer;border:2px solid var(--line)}
+  .del-yes{background:var(--mafia-tx);color:#fff}
+  .del-no{background:var(--paper-2);color:var(--ink)}
   /* 🛒 Ларёк */
   .shop-card{max-width:380px}
   .shop-sec{margin:4px 0 14px}
@@ -1062,6 +1072,7 @@ function showBio(name){
 }
 function closeBio(){ document.getElementById('bioModal').style.display='none'; }
 function openSettings(){
+  askDelete(false);
   const msg=document.getElementById('setMsg'); msg.className='setmsg'; msg.textContent='';
   const bmsg=document.getElementById('bioMsg'); bmsg.className='setmsg'; bmsg.textContent='';
   document.getElementById('settings').style.display='flex';
@@ -1108,6 +1119,21 @@ async function chooseAvatar(file,btn){
   }catch(e){ msg.className='setmsg err'; msg.textContent='Сервер не отвечает'; }
 }
 function closeSettings(){ document.getElementById('settings').style.display='none'; }
+// «Удалить мои данные»: сначала переспрашиваем прямо в настройках (без системных окон — они блокируют приложение)
+function askDelete(on){
+  document.getElementById('delAsk').classList.toggle('on',on);
+  document.getElementById('delBtn').style.display=on?'none':'';
+  const m=document.getElementById('delMsg'); m.className='setmsg'; m.textContent='';
+}
+async function deleteMe(){
+  const b=document.getElementById('delYes'), m=document.getElementById('delMsg'); b.disabled=true;
+  try{
+    const r=await fetch('/delete-me',{method:'POST'});
+    if(r.ok){ try{ localStorage.clear(); }catch(_){} location.href='/auth.html'; return; }
+    m.className='setmsg err'; m.textContent='Не получилось удалить, попробуй ещё раз';
+  }catch(_){ m.className='setmsg err'; m.textContent='Нет связи с сервером'; }
+  b.disabled=false;
+}
 async function saveNick(){
   const msg=document.getElementById('setMsg');
   const name=document.getElementById('nickInput').value.trim();
@@ -1257,6 +1283,17 @@ connect();
     <div class="ava-section">
       <label>Выбери своё лицо 👇</label>
       <div id="avaGrid"></div>
+    </div>
+    <div class="del-section">
+      <button class="del-btn" id="delBtn" onclick="askDelete(true)">🗑 Удалить мои данные</button>
+      <div class="del-ask" id="delAsk">
+        <p><b>Удалить всё навсегда?</b><br>Ник, аватарка, «о себе», очки и все твои реплики сотрутся. Вернуть их будет нельзя.</p>
+        <div class="del-row">
+          <button class="del-yes" id="delYes" onclick="deleteMe()">Да, удалить</button>
+          <button class="del-no" onclick="askDelete(false)">Отмена</button>
+        </div>
+        <div class="setmsg" id="delMsg"></div>
+      </div>
     </div>
   </div>
 </div>

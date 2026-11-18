@@ -176,4 +176,10 @@ function freeFinishedTodayByIp(ip) {
   catch (e) { console.error("журнал партий:", e.message); return 0; }
 }
 
-module.exports = { finishedTotal, freeFinishedTodayByIp, db, startGame, logMsg, finishGame, quitGame, shieldUsed, shieldSaved, logAiCall, pointsFor, leaderboard, invalidateLeaderboard, weekStart, dayStart, finishedToday };
+// «Удалить мои данные»: реплики — навсегда; партии остаются только как обезличенная статистика (без ника и IP)
+function forgetUser(userId) {
+  db.prepare("DELETE FROM game_msgs WHERE user_id = ?").run(userId);
+  db.prepare("UPDATE games SET user_name = '—', ip = NULL WHERE user_id = ?").run(userId);
+  invalidateLeaderboard();
+}
+module.exports = { forgetUser, finishedTotal, freeFinishedTodayByIp, db, startGame, logMsg, finishGame, quitGame, shieldUsed, shieldSaved, logAiCall, pointsFor, leaderboard, invalidateLeaderboard, weekStart, dayStart, finishedToday };
