@@ -321,6 +321,7 @@
   .st-buy{display:inline-block;margin-left:6px;font-family:inherit;font-size:11px;font-weight:700;padding:2px 8px;
     background:var(--mafia-tx);color:#fff;border:1px solid var(--line);cursor:pointer}
   .buy-link{color:var(--mafia-tx);font-weight:700;text-decoration:underline;cursor:pointer}
+  .share-btn{background:var(--paper-2);color:var(--ink)}
   /* «Удалить мои данные» */
   .del-section{margin-top:18px;padding-top:12px;border-top:2px dashed #cfcabc;text-align:center}
   .del-btn{font-family:inherit;font-size:13px;color:var(--ink-soft);background:none;border:0;text-decoration:underline;cursor:pointer;padding:6px}
@@ -972,7 +973,7 @@ function handle(e){
       if(ROLE_MEMO[e.role]) add(el("plaque memo",memoOf(e.role)+`<div class="memo-hint">Памятка всегда под рукой — нажми на свою роль вверху</div>`));
       break;
     case "your_turn":
-      showInput(e);break;
+      showInput(e);buzz('turn');break;
     case "your_turn_done":
       hideInput();break;
     case "check_result":
@@ -1006,7 +1007,8 @@ function handle(e){
     case "day":
       dayLabel.textContent="День "+e.day;break;
     case "dead":{
-      const p=players.find(x=>x.name===e.name);if(p){p.alive=false;if(e.role)p.role=e.role;}render();updateQuit();updateShield();break;}
+      const p=players.find(x=>x.name===e.name);if(p){p.alive=false;if(e.role)p.role=e.role;}render();updateQuit();updateShield();
+      if(e.name===myName) buzz('dead');break;}
     case "narrator":
       add(el("narr",esc(e.text)));break;
     case "say":{
@@ -1041,6 +1043,9 @@ function handle(e){
       line.title='Открыть турнирную таблицу'; line.onclick=openLeaderboard;
       const rb=document.getElementById('replayBtn');
       if(rb) feed.insertBefore(line,rb); else add(line);     // над кнопкой «Сыграть ещё»
+      buzz(e.points>0?'win':'lose');
+      { const sb=shareBtn(e.points); if(sb){ if(rb) feed.insertBefore(sb,rb.nextSibling); else add(sb); } }   // приложение: под «Сыграть ещё»
+      { const rm=remindBox(); if(rm) add(rm); }
       if(e.acct){
         const al=acctLine(e.acct);
         if(rb) feed.insertBefore(al,rb); else add(al);
@@ -1183,6 +1188,45 @@ async function loadLb(period){
 }
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeSettings(); closeBio(); closeLb(); } });
 
+// ── iPhone-приложение (Capacitor): вибро, «поделиться», напоминание. В обычном браузере ничего этого нет ──
+const CAP=window.Capacitor, NATIVE=!!(CAP&&CAP.isNativePlatform&&CAP.isNativePlatform());
+const plug=n=>NATIVE&&CAP.Plugins?CAP.Plugins[n]:null;
+let liveAt=0;   // при (пере)подключении сервер проигрывает партию заново — старые события не вибрируют
+function buzz(kind){
+  const H=plug('Haptics'); if(!H||Date.now()<liveAt) return;
+  try{ kind==='turn' ? H.impact({style:'LIGHT'}) : H.notification({type:kind==='win'?'SUCCESS':kind==='dead'?'ERROR':'WARNING'}); }catch(_){}
+}
+function shareBtn(points){
+  const S=plug('Share'); if(!S) return null;
+  const b=document.createElement('button'); b.className='replay pixel share-btn'; b.textContent='📤 Поделиться';
+  const role=roleRu[myRole]||'мирный житель';
+  const text=`🎭 Сыграл(а) в Мафию с ИИ: моя роль — ${role}, ${points>0?'и мы победили! 🏆':'но в этот раз нас переиграли 😈'} Сможешь вычислить мафию?`;
+  b.onclick=()=>{ try{ S.share({title:'Мафия с ИИ',text,url:'https://app.iplaymafia.com'}); }catch(_){} };
+  return b;
+}
+// после первой доигранной партии — один раз предлагаем вечернее напоминание (локальное, без сервера)
+const REMIND_KEY='mafia.remind';
+function remindBox(){
+  const L=plug('LocalNotifications'); if(!L) return null;
+  try{ if(localStorage.getItem(REMIND_KEY)) return null; }catch(_){ return null; }
+  const d=document.createElement('div'); d.className='limitbox ev'; d.id='remindBox';
+  d.innerHTML=`<p>🔔 Напоминать каждый вечер в 20:00, что тебя ждёт подарочный щит?</p>
+    <div class="del-row"><button class="del-yes" id="rmYes">Да</button><button class="del-no" id="rmNo">Не надо</button></div>`;
+  const done=v=>{ try{ localStorage.setItem(REMIND_KEY,v); }catch(_){} d.remove(); };
+  d.querySelector('#rmNo').onclick=()=>done('no');
+  d.querySelector('#rmYes').onclick=async()=>{
+    try{
+      const p=await L.requestPermissions();
+      if(p&&p.display==='granted'){
+        await L.schedule({notifications:[{id:20,title:'🛡 Подарочный щит ждёт',body:'Деревня скучает — садись за стол, пока мафия не разошлась.',schedule:{on:{hour:20,minute:0},allowWhileIdle:true}}]});
+        toast('🔔 Готово — напомним в 20:00',4000);
+      } else toast('Уведомления выключены — включить можно в Настройках iPhone',5000);
+    }catch(_){}
+    done('yes');
+  };
+  return d;
+}
+
 // кнопка «Сыграть ещё»: просим сервер забыть доигранную партию и перезагружаемся —
 // новая заведётся сама на /events (тем же комиссаром, как задано при запуске)
 function showReplay(){
@@ -1197,6 +1241,7 @@ function showReplay(){
 let gotReal=false, demoTimer=null, src=null;
 function reconnect(){ try{ if(src) src.close(); }catch(_){} hideInput(); connect(); }
 function connect(){
+  liveAt=Date.now()+1500;
   try{ src=new EventSource('/events'); }catch(_){ return startDemo(); }
   src.onmessage=ev=>{
     if(!gotReal){gotReal=true;stopDemo();connEl.textContent="● эфир";connEl.className="conn live";}

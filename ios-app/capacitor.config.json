@@ -1,0 +1,19 @@
+{
+  "appId": "com.iplaymafia.app",
+  "appName": "Мафия",
+  "webDir": "www",
+  "server": {
+    "url": "https://app.iplaymafia.com",
+    "errorPath": "offline.html"
+  },
+  "ios": {
+    "appendUserAgent": "MafiaApp-iOS",
+    "backgroundColor": "#0f1424",
+    "contentInset": "always"
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "iconColor": "#b5352c"
+    }
+  }
+}
