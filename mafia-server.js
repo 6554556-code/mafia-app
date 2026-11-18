@@ -500,6 +500,7 @@ function sexOf(p) {
   const m = /(^|\/)([fm])\d*\.png$/i.exec(p.av || "");
   return m ? m[2].toLowerCase() : null;
 }
+auth.setReservedNames(POOL.map((p) => p.name));   // ник игрока не может совпасть с именем ИИ-персонажа
 const sexWord = (p) => ({ f: "женщина", m: "мужчина" }[sexOf(p)] || "пол не указан");
 const bioLine = (p) => {
   if (!p.human) return `${p.name} (${sexWord(p)}, ${p.age}, ${p.job}; ${p.hobby})`;

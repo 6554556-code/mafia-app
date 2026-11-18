@@ -112,6 +112,32 @@ const isDisposable = (email) => DISPOSABLE.has(String(email).split("@")[1] || ""
 // Игровой ник: 2–16 символов — буквы любого языка, цифры, пробел, дефис, подчёркивание.
 function validName(n) { return /^[\p{L}\p{N} _-]{2,16}$/u.test(n); }
 
+// ── Фильтр ников (App Store 1.2: ники видны всем в турнирной таблице) ──
+// Приводим ник к «скелету»: строчные, ё→е, латиница-двойник и цифры-двойники → кириллица, без пробелов и повторов букв.
+// «Xyй», «х у й», «хууууй», «x_y_i» → «хуй». Корни ищем внутри скелета.
+const LOOK = { a: "а", b: "в", c: "с", e: "е", h: "н", k: "к", m: "м", o: "о", p: "р", t: "т", x: "х", y: "у", u: "и", i: "и", "0": "о", "3": "з", "4": "ч", "6": "б", "@": "а", "$": "с" };
+function skeleton(n) {
+  let s = String(n).toLowerCase().replace(/ё/g, "е").replace(/[ _\-.]/g, "");
+  s = [...s].map((ch) => LOOK[ch] || ch).join("");
+  return s.replace(/(.)\1+/g, "$1");
+}
+// мат, оскорбления, ненависть, секс. Корни подобраны так, чтобы не задеть обычные слова (мудрый, хлеб, небо, мандарин, Глеб).
+const BAD_RU = ["хуй", "хуе", "хуя", "хуи", "хуе", "пизд", "пезд", "ебан", "ебат", "ебал", "ебло", "ебуч", "ебну", "уеб", "заеб", "выеб", "доеб", "наеб", "отьеб", "разьеб", "въеб", "ебл", "бля", "сука", "суки", "сучк", "сучар",
+  "мудак", "мудил", "мудоз", "пидор", "пидар", "пидр", "педик", "педераст", "гандон", "гондон", "шлюх", "шлюш", "проститут", "залуп", "дроч", "шалав", "мандав", "хер", "жоп", "говн", "дерьм", "срак", "сран",
+  "чурк", "хач", "жид", "нигер", "ниггер", "негр", "даун", "дебил", "дибил", "аутист", "гитлер", "нацист", "фашист", "зигхайл", "секс", "порн", "трахн", "трахат", "трахал", "сиськ", "минет", "оргазм", "изнасил", "наркот", "героин", "кокаин", "убейся", "сдохни"];
+const BAD_LAT = ["fuck", "fuk", "shit", "bitch", "cunt", "dick", "cock", "pussy", "whore", "slut", "nigg", "fag", "porn", "sex", "rape", "nazi", "hitler", "penis", "vagina", "boob", "tits"];
+const NOT_BAD = ["херсон", "херес", "херувим", "хачапур", "жидк"];   // корни выше задевают эти слова — пропускаем
+let RESERVED = new Set();                           // имена ИИ-персонажей: два «Кабана» за одним столом путают игру
+function setReservedNames(names) { RESERVED = new Set(names.map((n) => String(n).toLowerCase())); }
+function nickProblem(n) {
+  const low = String(n).toLowerCase().replace(/ё/g, "е");
+  if (RESERVED.has(low)) return "Так зовут одного из персонажей игры — придумай другой ник";
+  const sk = skeleton(n), lat = low.replace(/[ _\-.]/g, "").replace(/1/g, "i").replace(/0/g, "o").replace(/\$/g, "s").replace(/@/g, "a").replace(/(.)\1+/g, "$1");
+  if (NOT_BAD.some((w) => sk.includes(w))) return null;
+  if (BAD_RU.some((w) => sk.includes(w)) || BAD_LAT.some((w) => lat.includes(w))) return "Такой ник не подойдёт — придумай другой";
+  return null;
+}
+
 // ── Регистрация: заводит пользователя и сразу открывает сессию ──
 function register(email, password, name, consent = {}) {
   email = normEmail(email);
@@ -140,6 +166,7 @@ function register(email, password, name, consent = {}) {
 function guest(name) {
   name = String(name || "").trim();
   if (!validName(name)) return { error: "Ник: 2–16 символов — буквы, цифры, пробел, дефис или подчёркивание" };
+  const bad = nickProblem(name); if (bad) return { error: bad };
   const nameLower = name.toLowerCase();
   if (db.prepare("SELECT id FROM users WHERE name_lower = ?").get(nameLower)) return { error: "Этот ник уже занят — придумай другой" };
   const info = db.prepare("INSERT INTO users (name, name_lower, avatar, created, ai_ok) VALUES (?, ?, ?, ?, ?)")
@@ -298,6 +325,7 @@ function tokenFromReq(req) { return parseCookies(req).sid || null; }
 function rename(userId, newName) {
   newName = String(newName || "").trim();
   if (!validName(newName)) return { error: "Ник: 2–16 символов — буквы, цифры, пробел, дефис или подчёркивание" };
+  const bad = nickProblem(newName); if (bad) return { error: bad };
   const newLower = newName.toLowerCase();
   const taken = db.prepare("SELECT id FROM users WHERE name_lower = ? AND id != ?").get(newLower, userId);
   if (taken) return { error: "Этот ник уже занят" };
@@ -389,5 +417,5 @@ function shieldAdd(email, n) {
   return { user: db.prepare(`SELECT ${USER_COLS} FROM users WHERE id = ?`).get(u.id), info: shieldInfo(u) };
 }
 
-module.exports = { guest, setAiConsent, deleteUser, makeGift, redeemGift, unsubSig, unsubscribe, db, issueTempPassword, changePassword, makeVerifyToken, confirmEmail, setNews, userById, funPassword, normEmail,
+module.exports = { nickProblem, setReservedNames, guest, setAiConsent, deleteUser, makeGift, redeemGift, unsubSig, unsubscribe, db, issueTempPassword, changePassword, makeVerifyToken, confirmEmail, setNews, userById, funPassword, normEmail,
   shieldInfo, useShield, shieldAdd, register, login, logout, userByToken, tokenFromReq, rename, setAvatar, listAvatars, setBio, isVip, vipAdd, vipOff, vipList };
