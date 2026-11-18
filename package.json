@@ -1,0 +1,10 @@
+{
+  "name": "mafia-app",
+  "private": true,
+  "description": "Мафия с ИИ — версия для App Store (MVP)",
+  "main": "mafia-server.js",
+  "dependencies": {
+    "dotenv": "^18.0.10",
+    "express": "^5.3.0"
+  }
+}
