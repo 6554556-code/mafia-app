@@ -1210,7 +1210,7 @@ const plug=n=>NATIVE&&CAP.Plugins?CAP.Plugins[n]:null;
 let liveAt=0;   // при (пере)подключении сервер проигрывает партию заново — старые события не вибрируют
 function buzz(kind){
   const H=plug('Haptics'); if(!H||Date.now()<liveAt) return;
-  try{ kind==='turn' ? H.impact({style:'LIGHT'}) : H.notification({type:kind==='win'?'SUCCESS':kind==='dead'?'ERROR':'WARNING'}); }catch(_){}
+  try{ kind==='turn' ? H.vibrate() : H.notification({type:kind==='win'?'SUCCESS':kind==='dead'?'ERROR':'WARNING'}); }catch(_){}   // ход — настоящая вибрация, как у сообщения
 }
 function shareBtn(points){
   const S=plug('Share'); if(!S) return null;
@@ -1220,8 +1220,36 @@ function shareBtn(points){
   b.onclick=()=>{ try{ S.share({title:'Мафия с ИИ',text,url:'https://app.iplaymafia.com'}); }catch(_){} };
   return b;
 }
-// после первой доигранной партии — один раз предлагаем вечернее напоминание (локальное, без сервера)
+// после первой доигранной партии — один раз предлагаем вечерние напоминания (локальные, без сервера)
 const REMIND_KEY='mafia.remind';
+const REMIND_TEXTS=[
+  ['🛡 Подарочный щит ждёт','Сегодняшний щит ещё не взят. Мафия надеется, что ты не придёшь.'],
+  ['🌙 Город засыпает…','…а ты ещё нет? Садись за стол, ночь будет длинной.'],
+  ['🔪 Мафия что-то задумала','Вчера кто-то подозрительно рано ушёл спать. Проверишь?'],
+  ['🕵️ Комиссару нужна помощь','Улики на столе, подозреваемые на месте. Не хватает только тебя.'],
+  ['🍷 Деревня собралась','Кабан уже кого-то обвиняет, Фурия всё перепутала. Без тебя не разобраться.'],
+  ['🎭 Кто сегодня врёт?','Спойлер: минимум двое. Вычислишь?'],
+  ['🛡 Новый щит — твой','Пригодится, когда деревня начнёт голосовать против тебя.'],
+  ['😈 Маньяк скучает','Ночь тихая. Подозрительно тихая.'],
+  ['🌹 Путана знает больше, чем говорит','Загляни сегодня — может, и тебе расскажет.'],
+  ['🗳 Без тебя голосование не то','Деревня спорит, кого убрать. Твой голос решает.'],
+];
+// Каждый раз, когда игрок открывает игру, ставим 10 вечеров по 20:00, начиная с ЗАВТРА, — каждый вечер свой текст.
+// Зашёл сегодня — сегодня тишина (и подарочный щит в 20:00 у того, кто не заходил, правда не взят).
+// Не заходил 10 дней — напоминания кончаются сами, без спама.
+async function scheduleReminders(){
+  const L=plug('LocalNotifications'); if(!L) return;
+  try{
+    const p=await L.checkPermissions(); if(!p||p.display!=='granted') return;
+    await L.cancel({notifications:Array.from({length:11},(_,i)=>({id:20+i}))});   // 20 — старое «каждый день одно и то же»
+    const now=new Date(), day0=Math.floor((now-now.getTimezoneOffset()*6e4)/864e5), list=[];
+    for(let i=1;i<=10;i++){
+      const [title,body]=REMIND_TEXTS[(day0+i)%REMIND_TEXTS.length];
+      list.push({id:20+i,title,body,schedule:{at:new Date(now.getFullYear(),now.getMonth(),now.getDate()+i,20,0,0),allowWhileIdle:true}});
+    }
+    await L.schedule({notifications:list});
+  }catch(_){}
+}
 function remindBox(){
   const L=plug('LocalNotifications'); if(!L) return null;
   try{ if(localStorage.getItem(REMIND_KEY)) return null; }catch(_){ return null; }
@@ -1233,15 +1261,15 @@ function remindBox(){
   d.querySelector('#rmYes').onclick=async()=>{
     try{
       const p=await L.requestPermissions();
-      if(p&&p.display==='granted'){
-        await L.schedule({notifications:[{id:20,title:'🛡 Подарочный щит ждёт',body:'Деревня скучает — садись за стол, пока мафия не разошлась.',schedule:{on:{hour:20,minute:0},allowWhileIdle:true}}]});
-        toast('🔔 Готово — напомним в 20:00',4000);
-      } else toast('Уведомления выключены — включить можно в Настройках iPhone',5000);
+      if(p&&p.display==='granted'){ done('yes'); await scheduleReminders(); toast('🔔 Договорились!',3500); return; }
+      toast('Уведомления выключены — включить можно в Настройках iPhone',5000);
     }catch(_){}
     done('yes');
   };
   return d;
 }
+
+try{ if(NATIVE&&localStorage.getItem(REMIND_KEY)==='yes') scheduleReminders(); }catch(_){}
 
 // кнопка «Сыграть ещё»: просим сервер забыть доигранную партию и перезагружаемся —
 // новая заведётся сама на /events (тем же комиссаром, как задано при запуске)
