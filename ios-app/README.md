@@ -8,7 +8,7 @@
 | | |
 |---|---|
 | Название под иконкой | Мафия |
-| Bundle ID | `com.iplaymafia.app` |
+| Bundle ID | `com.BGGames.Mafia` (com.iplaymafia.app занят кем-то другим) |
 | Адрес игры | `GAME` в `www/index.html` + `server.allowNavigation` в `capacitor.config.json` |
 | Нет сети при запуске | `www/index.html` (проверка связи, 6 с) |
 | Связь оборвалась во время загрузки | `www/offline.html` (`server.errorPath`) |
