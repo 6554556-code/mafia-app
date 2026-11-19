@@ -989,7 +989,7 @@ function handle(e){
       if(ROLE_MEMO[e.role]) add(el("plaque memo",memoOf(e.role)+`<div class="memo-hint">Памятка всегда под рукой — нажми на свою роль вверху</div>`));
       break;
     case "your_turn":
-      showInput(e);buzz('turn');break;
+      showInput(e);break;
     case "your_turn_done":
       hideInput();break;
     case "check_result":
@@ -1023,8 +1023,7 @@ function handle(e){
     case "day":
       dayLabel.textContent="День "+e.day;break;
     case "dead":{
-      const p=players.find(x=>x.name===e.name);if(p){p.alive=false;if(e.role)p.role=e.role;}render();updateQuit();updateShield();
-      if(e.name===myName) buzz('dead');break;}
+      const p=players.find(x=>x.name===e.name);if(p){p.alive=false;if(e.role)p.role=e.role;}render();updateQuit();updateShield();break;}
     case "narrator":
       add(el("narr",esc(e.text)));break;
     case "say":{
@@ -1208,9 +1207,11 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeSettings(); 
 const CAP=window.Capacitor, NATIVE=!!(CAP&&CAP.isNativePlatform&&CAP.isNativePlatform());
 const plug=n=>NATIVE&&CAP.Plugins?CAP.Plugins[n]:null;
 let liveAt=0;   // при (пере)подключении сервер проигрывает партию заново — старые события не вибрируют
+// Вибрация только в конце партии: победа — одна, проигрыш — две подряд («ту-дум»).
+// Настоящая вибрация (как у сообщения): лёгкие «щелчки» iPhone глушит при выключенных системных тактильных сигналах.
 function buzz(kind){
   const H=plug('Haptics'); if(!H||Date.now()<liveAt) return;
-  try{ kind==='turn' ? H.vibrate() : H.notification({type:kind==='win'?'SUCCESS':kind==='dead'?'ERROR':'WARNING'}); }catch(_){}   // ход — настоящая вибрация, как у сообщения
+  try{ H.vibrate(); if(kind==='lose') setTimeout(()=>{ try{ H.vibrate(); }catch(_){} },700); }catch(_){}
 }
 function shareBtn(points){
   const S=plug('Share'); if(!S) return null;
