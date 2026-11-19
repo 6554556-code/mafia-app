@@ -3,7 +3,7 @@
   "appName": "Мафия",
   "webDir": "www",
   "server": {
-    "url": "https://app.iplaymafia.com",
+    "allowNavigation": ["app.iplaymafia.com"],
     "errorPath": "offline.html"
   },
   "ios": {

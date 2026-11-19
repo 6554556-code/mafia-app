@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Мафия — нет связи</title>
 <style>
-  /* Экран «нет сети»: показывается вместо игры, если app.iplaymafia.com не открылся (авиарежим, нет интернета).
-     Лежит внутри приложения — работает без сети. */
+  /* Запасной экран «нет сети» (server.errorPath): если игра начала грузиться, но связь оборвалась посреди загрузки.
+     Обычный старт без сети ловит index.html — он проверяет связь сам. Лежит внутри приложения — работает без сети. */
   *{box-sizing:border-box}
   html,body{margin:0;height:100%}
   body{background:#0f1424;color:#2c2c28;font-family:ui-monospace,"SF Mono",Menlo,monospace;
@@ -34,12 +34,12 @@
     <p class="hint" id="hint"></p>
   </main>
 <script>
-  const GAME = "https://app.iplaymafia.com/";
+  const START = "index.html";   // стартовая страница приложения: сама проверит связь и откроет игру
   const btn = document.getElementById("retry"), hint = document.getElementById("hint");
   function retry(){
     if (!navigator.onLine) { hint.textContent = "Интернета пока нет 🌙"; return; }
     btn.disabled = true; hint.textContent = "Стучимся в дверь…";
-    location.href = GAME;
+    location.href = START;
   }
   btn.onclick = retry;
   // сеть вернулась сама — сразу возвращаемся в игру

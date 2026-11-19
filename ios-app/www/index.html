@@ -2,12 +2,72 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <title>Мафия</title>
-<!-- Запасная страница: приложение открывает игру с https://app.iplaymafia.com (capacitor.config.json → server.url).
-     Сюда попадаем, только если что-то пошло не так, — сразу отправляем в игру. -->
-<style>html,body{margin:0;height:100%;background:#0f1424}</style>
-<script>location.replace("https://app.iplaymafia.com/");</script>
+<style>
+  /* Стартовая страница приложения — лежит ВНУТРИ приложения и работает без сети.
+     За 6 секунд проверяет, отвечает ли сервер: да — открывает игру, нет — показывает «нет связи».
+     (Если сразу грузить сайт, iPhone без сети молча ждёт 30+ секунд на тёмном экране.) */
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:#0f1424;color:#2c2c28;font-family:ui-monospace,"SF Mono",Menlo,monospace;
+    display:grid;place-items:center;padding:20px;-webkit-user-select:none;user-select:none}
+  .boot{text-align:center;color:#c9c3b2}
+  .boot img{width:120px;height:120px;border-radius:27px;display:block;margin:0 auto 18px;box-shadow:0 6px 24px rgba(0,0,0,.5)}
+  .boot p{font-size:14px;letter-spacing:.5px;margin:0;animation:dim 1.6s ease-in-out infinite}
+  @keyframes dim{0%,100%{opacity:1}50%{opacity:.4}}
+  .card{display:none;width:100%;max-width:360px;background:#f2efe6;border:3px solid #2c2c28;
+    box-shadow:inset 0 0 0 2px #f2efe6,4px 4px 0 rgba(0,0,0,.35);padding:24px 20px;text-align:center}
+  body.off .boot{display:none}
+  body.off .card{display:block}
+  .ico{font-size:52px;line-height:1;animation:dim 2.4s ease-in-out infinite}
+  h1{font-size:20px;margin:14px 0 8px;letter-spacing:.5px}
+  .card p{font-size:14px;line-height:1.55;color:#5a5a52;margin:0 0 6px}
+  button{width:100%;margin-top:16px;padding:13px 0;font-family:inherit;font-size:16px;font-weight:700;letter-spacing:1px;
+    background:#b5352c;color:#fff;border:2px solid #2c2c28;box-shadow:3px 3px 0 rgba(44,44,40,.25);cursor:pointer}
+  button:active{transform:translate(1px,1px)}
+  button:disabled{opacity:.6}
+  .hint{margin-top:12px;font-size:12px;min-height:1.4em}
+</style>
 </head>
-<body></body>
+<body>
+  <div class="boot">
+    <img src="icon.png" alt="">
+    <p id="bootText">Загружаем деревню…</p>
+  </div>
+  <main class="card" role="alert">
+    <div class="ico">📡</div>
+    <h1>Деревня осталась без связи</h1>
+    <p>Ночь, туман, и до сервера не дозвониться.</p>
+    <p>Проверь интернет — мафия подождёт.</p>
+    <button id="retry">ПОПРОБОВАТЬ ЕЩЁ</button>
+    <p class="hint" id="hint"></p>
+  </main>
+<script>
+  const GAME = "https://app.iplaymafia.com/";
+  const PING = GAME + "robots.txt";            // крошечный файл: просто «сервер на месте?»
+  const TIMEOUT = 6000;
+  const btn = document.getElementById("retry"), hint = document.getElementById("hint");
+  let checking = false;
+
+  async function check(){
+    if (checking) return; checking = true;
+    btn.disabled = true; hint.textContent = document.body.classList.contains("off") ? "Стучимся в дверь…" : "";
+    let ok = false;
+    if (navigator.onLine !== false) {
+      const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), TIMEOUT);
+      try { await fetch(PING + "?t=" + Date.now(), { mode: "no-cors", cache: "no-store", signal: ctl.signal }); ok = true; }
+      catch (_) {}
+      clearTimeout(t);
+    }
+    if (ok) { location.replace(GAME); return; }   // сервер ответил — в игру (страница остаётся на экране, пока игра грузится)
+    document.body.classList.add("off");
+    hint.textContent = navigator.onLine === false ? "Интернета пока нет 🌙" : "Сервер не отвечает — попробуй чуть позже";
+    btn.disabled = false; checking = false;
+  }
+  btn.onclick = check;
+  window.addEventListener("online", () => { hint.textContent = "Связь есть — возвращаемся…"; setTimeout(check, 600); });
+  check();
+</script>
+</body>
 </html>

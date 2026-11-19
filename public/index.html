@@ -1277,9 +1277,11 @@ function showOffline(){
   offEl=document.createElement('div'); offEl.className='offline-veil'; offEl.setAttribute('role','alert');
   offEl.innerHTML=`<div class="offline-card"><div class="off-ico">📡</div><b>Деревня осталась без связи</b>
     <p>Ночь, туман, и до сервера не дозвониться. Проверь интернет — мафия подождёт.</p>
-    <button onclick="location.reload()">ПОПРОБОВАТЬ ЕЩЁ</button></div>`;
+    <button onclick="retryConn()">ПОПРОБОВАТЬ ЕЩЁ</button></div>`;
   document.body.appendChild(offEl);
 }
+// «Попробовать ещё»: в приложении — на его стартовую страницу (она за 6 с проверит связь; перезагрузка сайта без сети висит 30+ с)
+function retryConn(){ if(NATIVE) location.href='capacitor://localhost/index.html'; else location.reload(); }
 function hideOffline(){ clearTimeout(offTimer); offTimer=null; if(offEl){ offEl.remove(); offEl=null; } }
 window.addEventListener('offline',showOffline);
 window.addEventListener('online',()=>{ hideOffline(); if(src&&src.readyState===2) connect(); });
