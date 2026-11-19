@@ -332,6 +332,16 @@
   .del-row button{flex:1;font-family:inherit;font-size:14px;font-weight:700;padding:9px 0;cursor:pointer;border:2px solid var(--line)}
   .del-yes{background:var(--mafia-tx);color:#fff}
   .del-no{background:var(--paper-2);color:var(--ink)}
+  /* нет связи */
+  .offline-veil{position:fixed;inset:0;z-index:9999;background:rgba(15,20,36,.82);display:grid;place-items:center;padding:20px}
+  .offline-card{width:100%;max-width:340px;background:var(--paper);border:3px solid var(--line);box-shadow:4px 4px 0 rgba(0,0,0,.35);
+    padding:22px 18px;text-align:center;font-size:14px;line-height:1.5}
+  .offline-card .off-ico{font-size:46px;line-height:1;margin-bottom:10px;animation:offblink 2.4s ease-in-out infinite}
+  @keyframes offblink{0%,100%{opacity:1}50%{opacity:.45}}
+  .offline-card b{font-size:18px}
+  .offline-card p{color:var(--ink-soft);margin:8px 0 0}
+  .offline-card button{width:100%;margin-top:14px;padding:12px 0;font-family:inherit;font-size:15px;font-weight:700;letter-spacing:1px;
+    background:#b5352c;color:#fff;border:2px solid var(--line);cursor:pointer}
   /* 🛒 Ларёк */
   .shop-card{max-width:380px}
   .shop-sec{margin:4px 0 14px}
@@ -1216,7 +1226,7 @@ function remindBox(){
   const L=plug('LocalNotifications'); if(!L) return null;
   try{ if(localStorage.getItem(REMIND_KEY)) return null; }catch(_){ return null; }
   const d=document.createElement('div'); d.className='limitbox ev'; d.id='remindBox';
-  d.innerHTML=`<p>🔔 Напоминать каждый вечер в 20:00, что тебя ждёт подарочный щит?</p>
+  d.innerHTML=`<p>🔔 Хочешь, будем напоминать о себе и дарить подарки?</p>
     <div class="del-row"><button class="del-yes" id="rmYes">Да</button><button class="del-no" id="rmNo">Не надо</button></div>`;
   const done=v=>{ try{ localStorage.setItem(REMIND_KEY,v); }catch(_){} d.remove(); };
   d.querySelector('#rmNo').onclick=()=>done('no');
@@ -1249,12 +1259,30 @@ function reconnect(){ try{ if(src) src.close(); }catch(_){} hideInput(); connect
 function connect(){
   liveAt=Date.now()+1500;
   try{ src=new EventSource('/events'); }catch(_){ return startDemo(); }
+  src.onopen=hideOffline;
   src.onmessage=ev=>{
+    hideOffline();
     if(!gotReal){gotReal=true;stopDemo();connEl.textContent="● эфир";connEl.className="conn live";}
     try{handle(JSON.parse(ev.data));}catch(_){}
   };
-  src.onerror=()=>{ if(!gotReal) startDemo(); };
+  // приложение: никакого демо — честно говорим, что нет связи; эфир оборвался — даём 5 с на переподключение
+  src.onerror=()=>{ if(!gotReal || !navigator.onLine) return showOffline(); offTimer=offTimer||setTimeout(showOffline,5000); };
 }
+
+// ── Нет связи: карточка поверх игры. Пропала сеть — появилась; вернулась — исчезла, эфир переподключается сам.
+// (Проверяющие App Store любят включать авиарежим посреди игры.)
+let offEl=null, offTimer=null;
+function showOffline(){
+  if(offEl) return;
+  offEl=document.createElement('div'); offEl.className='offline-veil'; offEl.setAttribute('role','alert');
+  offEl.innerHTML=`<div class="offline-card"><div class="off-ico">📡</div><b>Деревня осталась без связи</b>
+    <p>Ночь, туман, и до сервера не дозвониться. Проверь интернет — мафия подождёт.</p>
+    <button onclick="location.reload()">ПОПРОБОВАТЬ ЕЩЁ</button></div>`;
+  document.body.appendChild(offEl);
+}
+function hideOffline(){ clearTimeout(offTimer); offTimer=null; if(offEl){ offEl.remove(); offEl=null; } }
+window.addEventListener('offline',showOffline);
+window.addEventListener('online',()=>{ hideOffline(); if(src&&src.readyState===2) connect(); });
 
 // демо крутит короткий сценарий — чтобы видеть оформление без сервера
 function startDemo(){
