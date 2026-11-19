@@ -1218,7 +1218,7 @@ function shareBtn(points){
   const b=document.createElement('button'); b.className='replay pixel share-btn'; b.textContent='📤 Поделиться';
   const role=roleRu[myRole]||'мирный житель';
   const text=`🎭 Сыграл(а) в Мафию с ИИ: моя роль — ${role}, ${points>0?'и мы победили! 🏆':'но в этот раз нас переиграли 😈'} Сможешь вычислить мафию?`;
-  b.onclick=()=>{ try{ S.share({title:'Мафия с ИИ',text,url:'https://app.iplaymafia.com'}); }catch(_){} };
+  b.onclick=()=>{ try{ S.share({title:'Мафия с ИИ',text,url:'https://apps.apple.com/app/id6836937089'}); }catch(_){} };   // страница игры в App Store
   return b;
 }
 // после первой доигранной партии — один раз предлагаем вечерние напоминания (локальные, без сервера)

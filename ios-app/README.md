@@ -14,6 +14,7 @@
 | Связь оборвалась во время загрузки | `www/offline.html` (`server.errorPath`) |
 | Связь оборвалась в игре | карточка в `public/index.html`, кнопка ведёт на `www/index.html` |
 | Опознавалка для сервера | к User-Agent добавляется `MafiaApp-iOS` |
+| Apple ID в App Store | 6836937089 → https://apps.apple.com/app/id6836937089 |
 
 ## Функции iPhone (зовутся из `public/index.html`, на сайте их нет)
 - **Вибро** (`@capacitor/haptics`): твой ход — лёгкий щелчок, тебя убили — «ошибка», конец партии — победа/поражение.
